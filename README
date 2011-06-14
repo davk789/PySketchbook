@@ -1,0 +1,13 @@
+PySketchbook
+
+A collection of random scripts and modules. 
+
+Dependencies are subject to change, since I am just winging it.
+
+So far dependencies are:
+PyQt4
+sc
+pygame
+
+
+
