@@ -11,7 +11,7 @@ import random
 
 from PyQt4 import QtGui, QtCore
 
-class SigilWindow(QtGui.QWidget):
+class SigilWindowOld(QtGui.QWidget):
   
     def __init__(self):
         QtGui.QWidget.__init__(self)
