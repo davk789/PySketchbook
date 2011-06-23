@@ -8,7 +8,8 @@ Eventually this file or another will have the following features:
 - presets support (using pickle?)
 
 """
-import midi
+
+import scmidi
 from scosc import controller
 import pyinst
 
