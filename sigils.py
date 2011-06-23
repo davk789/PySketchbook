@@ -4,7 +4,6 @@ window with the proper event loop. Redefine the draw function.
 """
 
 
-import math
 import random
 import copy
 
@@ -110,7 +109,7 @@ class SigilDiagonals(SigilWindow):
         super(self.__class__, self).__init__()
 
         self.penWidth = 1
-        self.segLength = 20
+        self.segLength = 45
         self.spread = 0.5
         
         numNodes = 5
@@ -129,22 +128,27 @@ class SigilDiagonals(SigilWindow):
             self.walk(path, start, direction)
             painter.drawPath(path)
 
-    def drawStroke(self, path, end):
+    def drawStroke(self, path, start, end):
         "change which stroke in subclasses"
         # convert QPoint to QPointF specifically for this function
+        vertex = QtCore.QPointF(start.x(), end.y())
         fend = QtCore.QPointF(end)
-        path.lineTo(fend)#fstart, fend)
+        path.quadTo(vertex, fend)
 
     def walk(self, path, qstart, direction):
+        """
+        Walk a random path at multiples of 45 degree angles.
+        """
         qloc = copy.copy(qstart)
 
         path.moveTo(QtCore.QPointF(qloc))
 
         for i in range(500):
+            old = copy.copy(qloc)
             qloc += QtCore.QPoint(
                 self.getDirection(direction.x()) * self.segLength, 
                 self.getDirection(direction.y()) * self.segLength)
-            self.drawStroke(path, qloc)
+            self.drawStroke(path, qloc, old)
 
     def getDirection(self, weight):
         """
