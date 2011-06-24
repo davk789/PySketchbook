@@ -3,58 +3,110 @@ Template for sigil generation. This template file will provide a 500x500
 window with the proper event loop. Redefine the draw function.
 """
 
-
 import random
 import copy
 
-from PyQt4 import QtGui, QtCore
+from PyQt4 import QtGui, QtCore, uic
 
 class SigilWindow(QtGui.QWidget):
+    """
+    Contains the SigilView and its controls.
+    """
+    def __init__(self):
+        super(SigilWindow, self).__init__()
+        self.ui = uic.loadUi("ui/SigilWindow.ui", self)
+        
+        self.sigilViews = [
+                           SigilDiagonals(self.ui.drawArea),
+                           SigilSquare(self.ui.drawArea),
+                           SigilCircle(self.ui.drawArea)
+                           ]
+        
+        self.initWidgets()
+        
+    def initWidgets(self):
+        "set the widget attributes"
+        
+        # top-level attributes
+        self.setPalette(QtGui.QPalette(QtGui.QColor("black")))
+        self.setWindowTitle("sigil generator")
+        
+        # refresh button
+        self.ui.refreshButton.pressed.connect(self.updateAlgorithm)
+        self.ui.refreshButton.setPalette(QtGui.QPalette(QtGui.QColor("white")))
+    
+        # create the draw controls    
+        self.drawControls = []
+        for view in self.sigilViews:
+            self.createSpinBox(view)
+
+    def updateAlgorithm(self):
+        self.update()
+        
+    def createSpinBox(self, view):
+        "create a spinbox and label and set their attributes"
+        
+        # spinbox
+        self.drawControls.append(QtGui.QSpinBox())
+        self.drawControls[-1].setPalette(QtGui.QPalette(QtGui.QColor("black")))
+        self.drawControls[-1].setValue(view.numStrokes)
+        self.drawControls[-1].valueChanged.connect(view.setNumStrokes)
+        
+        # label
+        label = QtGui.QLabel()
+        label.setText(view.__class__.__name__)
+        
+        # add them to the layout
+        self.ui.controlBox.addWidget(label)
+        self.ui.controlBox.addWidget(self.drawControls[-1])
+    
+    
+
+class SigilView(QtGui.QWidget):
     """
     Container for sigil diagrams. To draw sigils, subclass SigilWindow and 
     redefine self.doDrawImage(painter).
     """
-    def __init__(self):
-        QtGui.QWidget.__init__(self)
+    def __init__(self, parent):
+        QtGui.QWidget.__init__(self, parent)
         
-        self.foregroundColor = QtGui.QColor("white")
-        self.backgroundColor = QtGui.QColor("black")
+        self.penColor = QtGui.QColor("white")
 
-        self.penWidth = 7
+        self.penWidth = 4
         self.width = 500
         self.height = 500
+        self.numStrokes = 50
         
-        self.initUI()
+        self.setGeometry(0, 0, self.width, self.height)        
         
-    def initUI(self):
-        self.setGeometry(300, 300, self.width + 70, self.height + 70)
-        self.setWindowTitle('Sigil Test')
-        # set the background color
-        self.setPalette(QtGui.QPalette(self.backgroundColor))
+    def setNumStrokes(self, num):
+        self.numStrokes = num
+        self.update()
 
     def paintEvent(self, event):
         """
         manage the setup for each draw event and pass the actual
         drawing routine to another function in this class.
         """
+        # this painter needs to draw on a QImage. right now it is drawing
+        # on self, a QWidget.
         qp = QtGui.QPainter()
         qp.begin(self)
-        self.drawImage(event, qp)
-        qp.end()        
+        self.drawImage(qp)
+        qp.end()
 
-    def mousePressEvent(self, event):
-        self.update()
-
-    def drawImage(self, event, qp):
+    def drawImage(self, qp):
         """
         do the draw routine that will be run in the main event loop.
         """
+        # initialize the routine
         pen = QtGui.QPen()
-        pen.setColor(self.foregroundColor)
+        pen.setColor(self.penColor)
         pen.setWidth(self.penWidth)
 
         qp.setPen(pen)
 
+        # do the routine
         self.doDrawImage(qp)
 
     def doDrawImage(self, painter):
@@ -65,19 +117,32 @@ class SigilWindow(QtGui.QWidget):
         return None
 
 
-class SigilSquareCircle(SigilWindow):
-    def __init__(self):
-        super(SigilSquareCircle, self).__init__()
-
+class SigilSquare(SigilView):
+    def __init__(self, parent):
+        super(self.__class__, self).__init__(parent)
+        self.numStrokes = 15
         
     def doDrawImage(self, painter):
-        
-        for i in range(50):
-            self.makeCurve(painter, random.choice([2, 4, 8, 16]))
-
-        for i in range(15):
+        for i in range(self.numStrokes):
             self.makeLine(painter, random.choice([2, 4, 8, 16]))
 
+    def makeLine(self, painter, size=4):
+        x = random.randrange(33, self.width, self.width / size)
+        y = random.randrange(33, self.width, self.width / size)
+        offset = [self.width / size, -(self.width / size), 0]
+        painter.drawLine(
+            QtCore.QPoint(x, y),
+            QtCore.QPoint(x + random.choice(offset), y + random.choice(offset)))
+        
+
+class SigilCircle(SigilView):
+    def __init__(self, parent):
+        super(self.__class__, self).__init__(parent)
+        self.numStrokes = 50
+
+    def doDrawImage(self, painter):
+        for i in range(self.numStrokes):
+            self.makeCurve(painter, random.choice([2, 4, 8, 16]))
             
     def makeCurve(self, painter, size=4):
         """
@@ -89,49 +154,50 @@ class SigilSquareCircle(SigilWindow):
                 random.randrange(33, self.width, self.width / size),
                 random.randrange(33, self.width, self.width / size),
                 self.width / size,
-                self.width / size
-                ),
+                self.width / size),
             random.randrange(-180, 180, 90) * 16,
-            random.randrange(-180, 180, 90) * 16
-            )
+            random.randrange(-180, 180, 90) * 16)
 
-    def makeLine(self, painter, size=4):
-        x = random.randrange(33, self.width, self.width / size)
-        y = random.randrange(33, self.width, self.width / size)
-        offset = [self.width / size, -(self.width / size), 0]
-        painter.drawLine(
-            QtCore.QPoint(x, y),
-            QtCore.QPoint(x + random.choice(offset), y + random.choice(offset))
-            )
 
-class SigilDiagonals(SigilWindow):
-    def __init__(self):
-        super(self.__class__, self).__init__()
+class SigilDiagonals(SigilView):
+    def __init__(self, parent):
+        super(self.__class__, self).__init__(parent)
 
-        self.penWidth = 1
         self.segLength = 45
         self.spread = 0.5
+        self.numStrokes = 5
         
-        numNodes = 5
-        step = self.width / numNodes
+        step = self.width / 5
         self.grid = range(step, self.width, step)
-        self.starts = []
-        for i in range(5):
-            self.starts.append(QtCore.QPoint(random.choice(self.grid), random.choice(self.grid)))
 
     def doDrawImage(self, painter):
+        # i wish i knew what to do here without .collect(...)
+        self.starts = []
+        for i in range(self.numStrokes):
+            self.starts.append(QtCore.QPoint(random.choice(self.grid), random.choice(self.grid)))
+        
         for start in self.starts:
             path = QtGui.QPainterPath()
             direction = QtCore.QPoint(
                 random.randrange(-1, 2), 
                 random.randrange(-1, 2))
             self.walk(path, start, direction)
+
             painter.drawPath(path)
 
     def drawStroke(self, path, start, end):
-        "change which stroke in subclasses"
+        "Add a segment to the drawing path."
         # convert QPoint to QPointF specifically for this function
-        vertex = QtCore.QPointF(start.x(), end.y())
+        if start.x() < end.x():
+            vx = start.x()
+        else:
+            vx = end.x()
+        if start.y() < end.y():
+            vy = start.y()
+        else:
+            vy = end.y()
+
+        vertex = QtCore.QPointF(vx, vy)
         fend = QtCore.QPointF(end)
         path.quadTo(vertex, fend)
 
@@ -173,8 +239,8 @@ def main():
     import sys
     print "testing SigilWindow subclasses"
     app = QtGui.QApplication(sys.argv)
-    #sw = SigilSquareCircle()
-    sw = SigilDiagonals()
+    #sw = SigilDiagonals()
+    sw = SigilWindow()
     sw.show()
     sys.exit(app.exec_())
 
