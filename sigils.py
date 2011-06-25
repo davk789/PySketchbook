@@ -4,7 +4,6 @@ window with the proper event loop. Redefine the draw function.
 """
 
 import random
-import copy
 import os
 import glob
 
@@ -52,6 +51,7 @@ class SigilWindow(QtGui.QWidget):
         self.drawControls = []
         for view in self.sigilViews:
             self.createSpinBox(view)
+            view.refresh()
 
     def save(self):
         image = QtGui.QPixmap.grabWidget(self.ui.drawArea, 0, 0, 500, 500)
@@ -185,7 +185,7 @@ class SigilSquare(SigilView):
 class SigilCircle(SigilView):
     def __init__(self, parent):
         super(self.__class__, self).__init__(parent)
-        self.numStrokes = 50
+        self.numStrokes = 15
 
     def doDrawImage(self, painter):
         for data in self.figureData:
@@ -227,37 +227,41 @@ class SigilDiagonals(SigilView):
 
         self.segLength = 45
         self.spread = 0.5
-        self.numStrokes = 5
-        self.numSeqments = 50
+        self.numStrokes = 1
+        self.numSegments = 50
         
         step = self.width / 5
         self.grid = range(step, self.width, step)
-
-    def doDrawImageOld(self, painter):
-        # i wish i knew what to do here without .collect(...)
-        self.starts = []
-        for i in range(self.numStrokes):
-            self.starts.append(QtCore.QPoint(random.choice(self.grid), random.choice(self.grid)))
-        
-        for start in self.starts:
-            path = QtGui.QPainterPath()
-            direction = QtCore.QPoint(
-                random.randrange(-1, 2), 
-                random.randrange(-1, 2))
-            self.walk(path, start, direction)
-
-            painter.drawPath(path)
             
-    def doDrawImage(self):
-        pass
+    def doDrawImage(self, painter):
+        """
+        iterate over self.figureData to draw the line
+        """
+        path = QtGui.QPainterPath()
+        
+        for data in self.figureData:
+            path.moveTo(QtCore.QPointF(data[0][0], data[0][1]))
+            for ind in range(1, len(data)):
+                loc = QtCore.QPointF(data[ind][0], data[ind][1])
+                old = QtCore.QPointF(data[ind - 1][0], data[ind - 1][1])
+                vertex = self.getVertex(loc, old)
+                path.quadTo(vertex, loc)
+        
+        painter.drawPath(path)
+            
+    def getVertex(self, start, end):
+        "randomly choose between upper and lower curve point"
+        vx = random.choice([start.x(), end.x()])
+        vy = random.choice([start.y(), end.y()])
+        return QtCore.QPointF(vx, vy)
     
     def refresh(self):
-        """
+        """ 
         collect the data from the random walks. start with 
         """
         self.starts = []
         for i in range(self.numStrokes):
-            self.starts.append([(random.choice(self.grid), random.choice(self.grid))])
+            self.starts.append((random.choice(self.grid), random.choice(self.grid)))
         
         self.figureData = []
         for start in self.starts:
@@ -273,46 +277,12 @@ class SigilDiagonals(SigilView):
         loc = start # removing the copy calls since there is no drawing yet
         ret.append(loc)
         for i in range(self.numSegments):
-            loc += (
-                    self.getDirection(directionX) * self.segLength,
-                    self.getDirection(directionY) * self.segLength
-                    )
+            loc = (loc[0] + self.getDirection(directionX) * self.segLength,
+                   loc[1] + self.getDirection(directionY) * self.segLength)
             ret.append(loc)
         
         return ret
-        
-
-    def drawStroke(self, path, start, end):
-        "Add a segment to the drawing path."
-        # convert QPoint to QPointF specifically for this function
-        if start.x() < end.x():
-            vx = start.x()
-        else:
-            vx = end.x()
-        if start.y() < end.y():
-            vy = start.y()
-        else:
-            vy = end.y()
-
-        vertex = QtCore.QPointF(vx, vy)
-        fend = QtCore.QPointF(end)
-        path.quadTo(vertex, fend)
-
-    def walkOld(self, path, qstart, direction):
-        """
-        Walk a random path at multiples of 45 degree angles.
-        """
-        qloc = copy.copy(qstart)
-
-        path.moveTo(QtCore.QPointF(qloc))
-
-        for i in range(500):
-            old = copy.copy(qloc)
-            qloc += QtCore.QPoint(
-                self.getDirection(direction.x()) * self.segLength, 
-                self.getDirection(direction.y()) * self.segLength)
-            self.drawStroke(path, qloc, old)
-
+    
     def getDirection(self, weight):
         """
         given -1, 0, 1 return random number weighted towards the given value
