@@ -5,6 +5,8 @@ window with the proper event loop. Redefine the draw function.
 
 import random
 import copy
+import os
+import glob
 
 from PyQt4 import QtGui, QtCore, uic
 
@@ -15,12 +17,21 @@ class SigilWindow(QtGui.QWidget):
     def __init__(self):
         super(SigilWindow, self).__init__()
         self.ui = uic.loadUi("ui/SigilWindow.ui", self)
-        
         self.sigilViews = [
                            SigilDiagonals(self.ui.drawArea),
                            SigilSquare(self.ui.drawArea),
                            SigilCircle(self.ui.drawArea)
                            ]
+        self.setStyleSheet("""
+                           QWidget {
+                               color : white;
+                               background-color : black;
+                           }
+                           QPushButton {
+                               color : black;
+                               background-color : none;
+                           }"""
+                           )
         
         self.initWidgets()
         
@@ -33,12 +44,33 @@ class SigilWindow(QtGui.QWidget):
         
         # refresh button
         self.ui.refreshButton.pressed.connect(self.updateAlgorithm)
-        self.ui.refreshButton.setPalette(QtGui.QPalette(QtGui.QColor("white")))
     
+        # save button
+        self.ui.saveButton.pressed.connect(self.save)
+        
         # create the draw controls    
         self.drawControls = []
         for view in self.sigilViews:
             self.createSpinBox(view)
+
+    def save(self):
+        image = QtGui.QPixmap.grabWidget(self.ui.drawArea, 0, 0, 500, 500)
+        saveFolder = os.path.expanduser("~")
+        saveFolder += os.path.sep + "Pictures" + os.path.sep + "pysigils" + os.path.sep
+
+        if not os.path.exists(saveFolder):
+            os.makedirs(saveFolder)
+            counter = 0
+        else:
+            counter = len(glob.glob1(saveFolder, "*.jpg"))
+        
+        fileName = saveFolder + "pysigil" + str(counter) + ".jpg"
+
+        if image.save(fileName):
+            print "image saved successfully"
+        else:
+            print "there was a problem saving the image!!"
+
 
     def updateAlgorithm(self):
         self.update()
@@ -48,12 +80,13 @@ class SigilWindow(QtGui.QWidget):
         
         # spinbox
         self.drawControls.append(QtGui.QSpinBox())
-        self.drawControls[-1].setPalette(QtGui.QPalette(QtGui.QColor("black")))
+        #self.drawControls[-1].setPalette(QtGui.QPalette(QtGui.QColor("black")))
         self.drawControls[-1].setValue(view.numStrokes)
         self.drawControls[-1].valueChanged.connect(view.setNumStrokes)
         
         # label
         label = QtGui.QLabel()
+        #label.setStyleSheet("QLabel { color : white; }");
         label.setText(view.__class__.__name__)
         
         # add them to the layout
@@ -88,8 +121,7 @@ class SigilView(QtGui.QWidget):
         manage the setup for each draw event and pass the actual
         drawing routine to another function in this class.
         """
-        # this painter needs to draw on a QImage. right now it is drawing
-        # on self, a QWidget.
+        
         qp = QtGui.QPainter()
         qp.begin(self)
         self.drawImage(qp)

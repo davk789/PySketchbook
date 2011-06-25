@@ -1,3 +1,4 @@
+
 PySketchbook
 
 A collection of random scripts and modules, written mainly in python. 
@@ -8,6 +9,4 @@ So far dependencies are:
 PyQt4
 sc
 pygame
-
-
 
