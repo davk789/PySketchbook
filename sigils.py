@@ -71,9 +71,10 @@ class SigilWindow(QtGui.QWidget):
         else:
             print "there was a problem saving the image!!"
 
-
     def updateAlgorithm(self):
-        self.update()
+        for view in self.sigilViews:
+            view.refresh()
+            view.update()
         
     def createSpinBox(self, view):
         "create a spinbox and label and set their attributes"
@@ -92,8 +93,7 @@ class SigilWindow(QtGui.QWidget):
         # add them to the layout
         self.ui.controlBox.addWidget(label)
         self.ui.controlBox.addWidget(self.drawControls[-1])
-    
-    
+
 
 class SigilView(QtGui.QWidget):
     """
@@ -110,10 +110,13 @@ class SigilView(QtGui.QWidget):
         self.height = 500
         self.numStrokes = 50
         
+        self.figureData = []
+        
         self.setGeometry(0, 0, self.width, self.height)        
         
     def setNumStrokes(self, num):
         self.numStrokes = num
+        self.refresh()
         self.update()
 
     def paintEvent(self, event):
@@ -145,7 +148,14 @@ class SigilView(QtGui.QWidget):
         """
         Virtual Function
         """
-        print "this function is not implemented in this parent class!"
+        print "this function must be implemented by the subclass!"
+        return None
+    
+    def refresh(self):
+        """Virtual Function
+        Update the data points describing the figure.
+        """
+        print "this function must be implemented by the subclass!"
         return None
 
 
@@ -155,17 +165,22 @@ class SigilSquare(SigilView):
         self.numStrokes = 15
         
     def doDrawImage(self, painter):
+        for data in self.figureData:
+            painter.drawLine(
+                QtCore.QPoint(data[0], data[1]),
+                QtCore.QPoint(data[0] + data[2], data[1] + data[3]))
+    
+    def refresh(self):
+        self.figureData = []
         for i in range(self.numStrokes):
-            self.makeLine(painter, random.choice([2, 4, 8, 16]))
+            size = random.choice([2, 4, 8, 16])
+            x = random.randrange(33, self.width, self.width / size)
+            y = random.randrange(33, self.width, self.width / size)
+            directions = [self.width / size, -(self.width / size), 0]
+            ox = random.choice(directions)
+            oy = random.choice(directions)
+            self.figureData.append((x, y, ox, oy))
 
-    def makeLine(self, painter, size=4):
-        x = random.randrange(33, self.width, self.width / size)
-        y = random.randrange(33, self.width, self.width / size)
-        offset = [self.width / size, -(self.width / size), 0]
-        painter.drawLine(
-            QtCore.QPoint(x, y),
-            QtCore.QPoint(x + random.choice(offset), y + random.choice(offset)))
-        
 
 class SigilCircle(SigilView):
     def __init__(self, parent):
@@ -173,8 +188,23 @@ class SigilCircle(SigilView):
         self.numStrokes = 50
 
     def doDrawImage(self, painter):
+        for data in self.figureData:
+            painter.drawArc(
+                            QtCore.QRectF(data[0], data[1], data[2], data[3]), 
+                            data[4], 
+                            data[5])
+    
+    def refresh(self):
+        self.figureData = []
         for i in range(self.numStrokes):
-            self.makeCurve(painter, random.choice([2, 4, 8, 16]))
+            size = random.choice([2, 4, 8, 16])
+            x = random.randrange(33, self.width, self.width / size)
+            y = random.randrange(33, self.width, self.width / size)
+            w = self.width / size
+            h = self.width / size
+            sa = random.randrange(-180, 180, 90) * 16
+            ea = random.randrange(-180, 180, 90) * 16
+            self.figureData.append((x, y, h, w, sa, ea))
             
     def makeCurve(self, painter, size=4):
         """
@@ -198,11 +228,12 @@ class SigilDiagonals(SigilView):
         self.segLength = 45
         self.spread = 0.5
         self.numStrokes = 5
+        self.numSeqments = 50
         
         step = self.width / 5
         self.grid = range(step, self.width, step)
 
-    def doDrawImage(self, painter):
+    def doDrawImageOld(self, painter):
         # i wish i knew what to do here without .collect(...)
         self.starts = []
         for i in range(self.numStrokes):
@@ -216,6 +247,40 @@ class SigilDiagonals(SigilView):
             self.walk(path, start, direction)
 
             painter.drawPath(path)
+            
+    def doDrawImage(self):
+        pass
+    
+    def refresh(self):
+        """
+        collect the data from the random walks. start with 
+        """
+        self.starts = []
+        for i in range(self.numStrokes):
+            self.starts.append([(random.choice(self.grid), random.choice(self.grid))])
+        
+        self.figureData = []
+        for start in self.starts:
+            directionX = random.randrange(-1,2)
+            directionY = random.randrange(-1,2)
+
+            path = self.walk(start, directionX, directionY)
+            self.figureData.append(path)
+
+    def walk(self, start, directionX, directionY):
+        "do a random walk and add the steps to a return array"
+        ret = []
+        loc = start # removing the copy calls since there is no drawing yet
+        ret.append(loc)
+        for i in range(self.numSegments):
+            loc += (
+                    self.getDirection(directionX) * self.segLength,
+                    self.getDirection(directionY) * self.segLength
+                    )
+            ret.append(loc)
+        
+        return ret
+        
 
     def drawStroke(self, path, start, end):
         "Add a segment to the drawing path."
@@ -233,7 +298,7 @@ class SigilDiagonals(SigilView):
         fend = QtCore.QPointF(end)
         path.quadTo(vertex, fend)
 
-    def walk(self, path, qstart, direction):
+    def walkOld(self, path, qstart, direction):
         """
         Walk a random path at multiples of 45 degree angles.
         """
