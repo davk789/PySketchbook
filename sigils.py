@@ -7,7 +7,9 @@ import random
 import os
 import glob
 
-from PyQt4 import QtGui, QtCore, uic
+from PyQt4 import QtGui, QtCore#, uic
+# use pre-compiled version of the ui file
+import SigilWindow_ui
 
 class SigilWindow(QtGui.QWidget):
     """
@@ -15,7 +17,9 @@ class SigilWindow(QtGui.QWidget):
     """
     def __init__(self):
         super(SigilWindow, self).__init__()
-        self.ui = uic.loadUi("ui/SigilWindow.ui", self)
+        #self.ui = uic.loadUi("ui/SigilWindow.ui", self)
+        self.ui = SigilWindow_ui.Ui_Form()
+        self.ui.setupUi(self)
         self.sigilViews = [
                            SigilDiagonals(self.ui.drawArea),
                            SigilSquare(self.ui.drawArea),
@@ -304,7 +308,7 @@ class SigilDiagonals(SigilView):
 
 def main():
     import sys
-    print "testing SigilWindow subclasses"
+    print "testing SigilView subclasses"
     app = QtGui.QApplication(sys.argv)
     #sw = SigilDiagonals()
     sw = SigilWindow()
