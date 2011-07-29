@@ -17,8 +17,9 @@ def init(cam=1):
     global save_path
     global capture
 
-    save_path = "/Users/davk/Pictures/transmutation-study/"
+    save_path = os.path.join(os.path.expanduser("~"), "Pictures", "transmutation-study")
     if not os.path.exists(save_path):
+        print "save path does not exist. creating one now"
         os.mkdir(save_path)
 
     capture = cv.CaptureFromCAM(cam) # 1 = external webcam
@@ -32,7 +33,7 @@ def get_cam(numpoints=10):
     global capture
 
     frame = cv.QueryFrame(capture)
-    filename = save_path + "capture" + str(img_num) + ".jpg"
+    filename = os.path.join(save_path, "capture" + str(img_num) + ".jpg")
     cv.SaveImage(filename, frame)
     img_num += 1
     

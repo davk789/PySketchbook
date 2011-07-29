@@ -31,7 +31,7 @@ cv.NamedWindow("test", cv.CV_WINDOW_AUTOSIZE)
     
 
 def get_cam():
-    frame = cv.QueryFrame(capture)
+    frame = cv.QueryFrame(capture) 
     filepath = "/Users/davk/Desktop/test.jpg"
     cv.SaveImage(filepath, frame)
     
