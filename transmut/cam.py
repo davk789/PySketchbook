@@ -13,11 +13,15 @@ save_path = None
 capture = None
 img_num = 0
 
+usecam = False # workaround for an OpenCV bug on windows
+
 def init(cam=1):
     global save_path
     global capture
 
-    save_path = os.path.join(os.path.expanduser("~"), "Pictures", "transmutation-study")
+    save_path = os.path.join(os.path.expanduser("~"), 
+                             "Pictures", 
+                             "transmutation-study")
     if not os.path.exists(save_path):
         print "save path does not exist. creating one now"
         os.mkdir(save_path)
@@ -26,18 +30,13 @@ def init(cam=1):
     if not capture:
         print "ERROR: camera not captured!! Exiting now."
         sys.exit(1)
-
-def get_cam(numpoints=10):
-    global img_num
-    global save_path
-    global capture
-
+        
+def capture_image(path):
     frame = cv.QueryFrame(capture)
-    filename = os.path.join(save_path, "capture" + str(img_num) + ".jpg")
-    cv.SaveImage(filename, frame)
-    img_num += 1
+    cv.SaveImage(path, frame)
     
-    img = cv.LoadImageM(filename, cv.CV_LOAD_IMAGE_GRAYSCALE)
+def analyze_image(path, numpoints=10):
+    img = cv.LoadImageM(path, cv.CV_LOAD_IMAGE_GRAYSCALE)
     eig_image = cv.CreateMat(img.rows, img.cols, cv.CV_32FC1)
     temp_image = cv.CreateMat(img.rows, img.cols, cv.CV_32FC1)
     ret = []
@@ -50,6 +49,24 @@ def get_cam(numpoints=10):
                                         useHarris = True):
         ret.append((x,y))
     return ret
+
+def get_cam(numpoints):
+    """
+    Generate the filename, and then use it to capture and analyze input from
+    the webcam
+    """
+    global img_num
+    
+    filename = os.path.join(save_path, "capture" + str(img_num) + ".jpg")
+    if usecam:
+        capture_image(filename)
+    
+    ret = analyze_image(filename, numpoints)
+    
+    img_num += 1
+    
+    return ret
+
 
 ### testing
 
