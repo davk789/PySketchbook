@@ -20,11 +20,9 @@ class SigilWindow(QtGui.QWidget):
         #self.ui = uic.loadUi("ui/SigilWindow.ui", self)
         self.ui = SigilWindow_ui.Ui_Form()
         self.ui.setupUi(self)
-        self.sigilViews = [
-                           SigilDiagonals(self.ui.drawArea),
+        self.sigilViews = [SigilDiagonals(self.ui.drawArea),
                            SigilSquare(self.ui.drawArea),
-                           SigilCircle(self.ui.drawArea)
-                           ]
+                           SigilCircle(self.ui.drawArea)]
         self.setStyleSheet("""
                            QWidget {
                                color : white;
@@ -33,8 +31,8 @@ class SigilWindow(QtGui.QWidget):
                            QPushButton {
                                color : black;
                                background-color : none;
-                           }"""
-                           )
+                           }
+                           """)
         
         self.initWidgets()
         
@@ -193,8 +191,7 @@ class SigilCircle(SigilView):
 
     def doDrawImage(self, painter):
         for data in self.figureData:
-            painter.drawArc(
-                            QtCore.QRectF(data[0], data[1], data[2], data[3]), 
+            painter.drawArc(QtCore.QRectF(data[0], data[1], data[2], data[3]), 
                             data[4], 
                             data[5])
     

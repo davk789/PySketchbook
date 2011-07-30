@@ -10,6 +10,7 @@ is, the synths will be modulated somehow.
 """
 
 import sc
+#from pygame import time
 import time
 
 # ctl handles all the SuperCollider-style server messaging
@@ -30,11 +31,13 @@ class SCNodeManager(object):
 
 def main():
     nm = SCNodeManager()
+    delay = time.time() + 1.0
     for i in range(25):
         print "generating grain ", i
-        ctl.sendBundle((i / 20.0) + 1.0, [['s_new', "ts_mod0", nm.next_node_id(), 0, 1]])
-        #ctl.sendMsg('s_new', "ts_mod0", nm.next_node_id(), 0, 1)
-        #time.sleep(0.05)
+        #ctl.sendBundleAbs(delay, ['s_new', "ts_mod0", nm.next_node_id(), 0, 1])
+        #delay += 0.05
+        ctl.sendMsg('s_new', "ts_mod0", nm.next_node_id(), 0, 1)
+        time.sleep(0.05)
     print "all done"
 
 if __name__ == "__main__":
