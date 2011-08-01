@@ -42,7 +42,7 @@ def analyze_image(path, numpoints=10):
     return ret
 
 img_num = 0 # used by win bug workaround. remove this asap.
-def get_cam(numpoints, usecam=False):
+def get_cam(numpoints, name="capture.jpg", usecam=True):
     """
     Generate the filename, and then use it to capture and analyze input from
     the webcam. I should not have to write to file, fix this later.
