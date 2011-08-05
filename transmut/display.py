@@ -63,7 +63,6 @@ class TSDrawArea(QtGui.QWidget):
                                    points[0][1]))
         ind = 0
         used = []
-        last = 0, 0
         for i in range(len(points)):
             ni = self.nearest_point(points[ind], 
                                     points,
