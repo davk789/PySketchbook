@@ -7,7 +7,7 @@ Created on Aug 1, 2011
 @author: davk
 '''
 
-import sys, math
+import sys, math, platform
 import cv
 import pygame
 from pygame import image, display, event, draw
@@ -62,16 +62,34 @@ def draw_points_of_interest(img, dest, roi=None):
     indexes = nearest_indexes(points, roi)
     
     ordered_points = []
-    ind = 0
     for i in indexes:
-        ordered_points.append(points[ind])
-        ind = indexes[ind]
+        pt = quantize_point(points[i], roi)
+        ordered_points.append(pt)
     
     draw.lines(dest, 
-               pygame.Color("red"), 
+               pygame.Color("green"), 
                0, # filled
                ordered_points, 
-               1)
+               2)
+
+def quantize_point(pt, roi, grain=5.0):
+    """
+    There has got to be a more elegant way to quantize a point
+    """
+    pointx = pt[0] - roi[0]
+    pointy = pt[1] - roi[1]
+    stepx = roi[2] / grain
+    stepy = roi[3] / grain
+    quantx = 0
+    quanty = 0
+
+    while abs(quantx - pointx) > (stepx / 2.0):
+        quantx += stepx
+    while abs(quanty - pointy) > (stepy / 2.0):
+        quanty += stepy
+
+    return (quantx + roi[0], quanty + roi[1])
+
         
 def nearest_indexes(points, roi):
     indexes = []
@@ -128,8 +146,12 @@ def main():
     screen = display.set_mode((CAMWIDTH, CAMHEIGHT))
     display.set_caption("monkey fever")
     capture = cv.CaptureFromCAM(0);
-    haar_cascade = cv.Load("G:\\Developer\\OpenCV2.3\\opencv\\data\\haarcascades\\haarcascade_frontalface_default.xml")
     
+    if platform.system() == 'Windows':
+        haar_cascade = cv.Load("G:\\Developer\\OpenCV2.3\\opencv\\data\\haarcascades\\haarcascade_frontalface_default.xml")
+    else:
+        haar_cascade = cv.Load("/opt/local/var/macports/build/_opt_local_var_macports_sources_rsync.macports.org_release_ports_graphics_opencv/opencv/work/OpenCV-2.2.0/data/haarcascades/haarcascade_frontalface_default.xml")
+
     if not capture:
         print "could not get cam. exiting..."
         sys.exit(1)
@@ -146,4 +168,5 @@ def main():
     
 if __name__ == "__main__":
     main()
+
     
