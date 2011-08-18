@@ -10,3 +10,38 @@ PyQt4
 sc
 pygame
 
+
+
+How to set up ad-hoc network on mac (no wifi)
+
+1. Open up System Preferences->Network.
+
+2. Click on the Network Name drop down and select  Create Network.
+
+3. Give your network a name. A password is optional though probably a good idea.
+
+4. Click on Advanced.
+
+5. Click on the TCP/IP tab.
+
+6. Click the Configure IPv4 drop down and select Manual.
+
+7. Enter an IP and NetMask for your computer. I use 192.168.2.1 and 255.255.255.0.
+
+8. Click OK and then Apply and close System Preferences.
+
+9. On your iPhone open Settings->Wi-Fi and select the network you just created.
+
+10. Click the arrow to the right of the network name.
+
+11. Select Static for your IP type and enter your IP and NetMask for the iPhone. I use 192.168.2.2 for the IP. The NetMask must be the same as for the network which is 255.255.255.0.
+
+12. Exit your iPhone settings and open TouchOSC.
+
+13. Touch the field under the heading Network.
+
+14. Enter the IP address you created for your Mac. In my case this is 192.168.2.1.
+
+15. Make sure your ports are as you want them. Remember, the ports can be whatever you want to use, just make sure that they agree with whatever you are communicating with, ie OSCulator, MaxMSP, Processing etc. I use 8000 for the outgoing port and 9000 for the incoming port.
+
+16. Touch the done button and then once you are at the mainscreen of TouchOSC, select your Layout and touch done again.
