@@ -131,15 +131,51 @@ SynthDef("ts_bausch",
 	{ |freq=200, freq2=100, att=0.01, rel=0.2, lev=0.2, pan=0.0, rez=0.5|
 		var kEnv = EnvGen.kr(Env.perc(att, rel), 1, lev, doneAction:2);
 		var kLine = XLine.kr(freq2, freq, att+rel);
-		var aPH1 = Phasor.ar(0, freq, 0, 1);
-		var aPH2 = Phasor.ar(0, kLine, 0, 1);
+		var aPH1 = Phasor.ar(0, freq, 1, 0);
+		var aPH2 = Phasor.ar(0, kLine, 1, 0);
 		var aSQ = (aPH1 - aPH2) * kEnv;
 		var aSig = RLPF.ar(aSQ, kLine, rez);
 		Out.ar(0, Pan2.ar(aSig, pan));
 	}
 ).load(s);
 
+SynthDef("ts_bissosch",
+	{ |freq=200, freq2=100, att=0.01, rel=0.2, lev=0.2, pan=0.0, rez=0.5|
+		var kEnv = EnvGen.kr(Env.perc(att, rel), 1, lev, doneAction:2);
+		var aPH1 = Phasor.ar(0, freq, 1, 0);
+		var aPH2 = Phasor.ar(aPH1, freq2, 1, 0);
+		var aSQ = (aPH1 - aPH2) * kEnv;
+		var aSig = RLPF.ar(aSQ, freq2, rez);
+		Out.ar(0, Pan2.ar(aSig, pan));
+	}
+).load(s);
 
+SynthDef("ts_wassd",
+	{ |freq=200, att=0.01, rel=0.2, lev=0.2, pan=0.0, rez=0.5|
+		var kEnv = EnvGen.kr(Env.perc(att, rel), 1, lev, doneAction:2);
+		var aSig = VarSaw.ar(freq, 0, rez, kEnv); // using rez for bw
+		Out.ar(0, Pan2.ar(aSig, pan));
+	}
+).load(s);
+
+SynthDef("ts_snxsd",
+	{ |freq=200, att=0.01, rel=0.2, lev=0.2, pan=0.0, freq2=201|
+		var kEnv = EnvGen.kr(Env.perc(att, rel), 1, lev, doneAction:2);
+		var aOsc = SyncSaw.ar(freq2, freq, kEnv); // using rez for bw
+		var aSig = LPF.ar(aOsc, freq2 * 2);
+		Out.ar(0, Pan2.ar(aSig, pan));
+	}
+).load(s);
+
+SynthDef("ts_snoossd",
+	{ |freq=200, att=0.01, rel=0.2, lev=0.2, pan=0.0, freq2=201|
+		var kEnv = EnvGen.kr(Env.perc(att, rel), 1, lev, doneAction:2);
+		var kLine = XLine.kr(freq2, freq, att+rel);
+		var aOsc = SyncSaw.ar(kLine, freq, kEnv); // using rez for bw
+		var aSig = RLPF.ar(aOsc, kLine * 1.5, 0.25);
+		Out.ar(0, Pan2.ar(aSig, pan));
+	}
+).load(s);
 
 /*
 // Audio 
