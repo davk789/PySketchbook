@@ -39,6 +39,8 @@ defs = ["ts_sin_touch",
         "ts_wassd",
         "ts_snxsd",
         "ts_snoossd",
+        "ts_vosim",
+        "ts_vosimwoop",
         ]
 
 def make_scale(notes):
@@ -67,7 +69,8 @@ def doloop():
     while True:
         print doloop.scale
         for i in range(400):
-            beat = random.random() * random.choice([0.1, 0.2, 0.2, 0.4])
+            #beat = random.random() * random.choice([0.1, 0.2, 0.2, 0.4])
+            beat = random.random() * random.choice([6.0, 8.0, 10.0, 4.0])
             s.sendBundle(random.random() * beat,
                          [['s_new', random.choice(defs), -1, 0, 1,
                            'freq',  random_note(doloop.scale),
