@@ -26,6 +26,8 @@ scales = {'bohlen-pierce': (1.0/1.0,25.0/21.0,9.0/7.0,7.0/5.0,5.0/3.0,9.0/5.0,
           }
 defs = ["ts_sin_touch",
         "ts_swoop",
+        "ts_sin_touch", # double the chances of the 2 straight sin oscs
+        "ts_swoop",     # this one too
         "ts_hash",
         "ts_hash_blub",
         "ts_chorwow",
@@ -39,9 +41,20 @@ defs = ["ts_sin_touch",
         "ts_wassd",
         "ts_snxsd",
         "ts_snoossd",
-        "ts_vosim",
-        "ts_vosimwoop",
+        #"ts_vosim",
+        #"ts_vosimwoop",
+        "ts_tri",
+        "ts_tru",
+        "ts_tro",
+        "ts_tree",
+        "ts_trs",
+        "ts_squine",
+        "ts_squeene",
+        "ts_squiine",
+        "ts_wub",
+        "ts_wubz",
         ]
+#defs = ["ts_wubz", "ts_wub"]
 
 def make_scale(notes):
     ret = []
@@ -66,11 +79,13 @@ def refresh_scale(notes):
         time.sleep(random.randrange(0, 16, 4))
 
 def doloop():
+    counter = 0
     while True:
         print doloop.scale
+                 
         for i in range(400):
-            #beat = random.random() * random.choice([0.1, 0.2, 0.2, 0.4])
-            beat = random.random() * random.choice([6.0, 8.0, 10.0, 4.0])
+            beat = random.random() * random.choice([0.1, 0.2, 0.2, 0.4])
+            #beat = random.random() * random.choice([6.0, 8.0, 10.0, 4.0])
             s.sendBundle(random.random() * beat,
                          [['s_new', random.choice(defs), -1, 0, 1,
                            'freq',  random_note(doloop.scale),
