@@ -177,34 +177,6 @@ SynthDef("ts_snoossd",
 	}
 ).load(s);
 
-
-
-/*
-// osx only 
-SynthDef("ts_vosimwoop",
-	{ |freq=200, att=0.01, rel=0.2, lev=0.2, pan=0.0, freq2=201, lfreq=2, rez=0.5|
-		var kEnv = EnvGen.kr(Env.perc(att, rel), 1, lev, doneAction:2);
-		var kLine = XLine.kr(freq.max(freq2), freq2.min(freq), att+rel);
-		var aTrig = Phasor.ar(0, kLine, 1, -1);
-		var aOsc = VOSIM.ar(aTrig, freq2.max(freq), lfreq, rez, kEnv);
-		//var aOsc = SyncSaw.ar(freq2, freq, kEnv); // using rez for bw
-		var aSig = RLPF.ar(aOsc, kLine * 4, 0.1);
-		Out.ar(0, Pan2.ar(aSig, pan));
-	}
-).load(s);
-
-SynthDef("ts_vosim",
-	{ |freq=200, att=0.01, rel=0.2, lev=0.2, pan=0.0, freq2=201, lfreq=2, rez=0.5|
-		var kEnv = EnvGen.kr(Env.perc(att, rel), 1, lev, doneAction:2);
-		var aTrig = Phasor.ar(0, freq, 1, -1);
-		var aOsc = VOSIM.ar(aTrig, freq2.max(freq), lfreq, rez, kEnv);
-		//var aOsc = SyncSaw.ar(freq2, freq, kEnv); // using rez for bw
-		var aSig = RLPF.ar(aOsc, freq * 4, 0.1);
-		Out.ar(0, Pan2.ar(aSig, pan));
-	}
-).load(s);
-*/
-
 SynthDef("ts_tri",
 	{ |freq=200, att=0.01, rel=0.2, lev=0.2, pan=0.0|
 		var kEnv = EnvGen.kr(Env.perc(att, rel), 1, lev, doneAction:2);
@@ -296,3 +268,145 @@ SynthDef("ts_wubz",
 		Out.ar(0, Pan2.ar(aSig, pan));
 	}
 ).load(s);
+
+SynthDef("ts_porlon",
+	{ |freq=200, att=0.01, rel=0.2, lev=0.2, pan=0.0, lfreq=1.0|
+		// this uses too much cpu, do not
+		var kEnv = EnvGen.kr(Env.perc(att, rel), 1, lev, doneAction:2);
+		var aSig = Perlin3.ar(
+			SinOsc.ar(freq, 0, lfreq, 500),
+			SinOsc.ar(freq, 0, lfreq, 600),
+			SinOsc.ar(freq, 0, lfreq, 700)
+		) * kEnv;
+		Out.ar(0, Pan2.ar(aSig, pan));
+	}
+).load(s);
+
+SynthDef("ts_fammy",
+	{ |freq=200, att=0.01, rel=0.2, lev=0.2, pan=0.0, lfreq=2.0, lmod=1.0|
+		var kEnv = EnvGen.kr(Env.perc(att, rel), 1, lev, doneAction:2);
+		var aSig = SinOsc.ar(
+			freq, 
+			SinOsc.ar(freq*lfreq, 0, kEnv*lmod), 
+			kEnv);
+		Out.ar(0, Pan2.ar(aSig, pan));
+	}
+).load(s);
+
+SynthDef("ts_fammymodsw",
+	{ |freq=200, freq2=300, att=0.01, rel=0.2, lev=0.2, pan=0.0, lfreq=2.0, lmod=1.0|
+		var kEnv = EnvGen.kr(Env.perc(att, rel), 1, lev, doneAction:2);
+		var kfrq = XLine.kr(freq2, freq, att+rel);
+		var aSig = SinOsc.ar(
+			freq, 
+			SinOsc.ar(kfrq*lfreq, 0, kEnv*lmod), 
+			kEnv);
+		Out.ar(0, Pan2.ar(aSig, pan));
+	}
+).load(s);
+
+SynthDef("ts_fassy",
+	{ |freq=200, freq2=300, att=0.01, rel=0.2, lev=0.2, pan=0.0, lfreq=2.0, lmod=1.0,
+		rez=0.5|
+		var kEnv = EnvGen.kr(Env.perc(att, rel), 1, lev, doneAction:2);
+		var kfrq = XLine.kr(freq, freq2, att+rel);
+		var aOsc = SinOsc.ar(
+			kfrq, 
+			SinOsc.ar(kfrq*lmod, 0, kEnv*lmod), 
+			kEnv);
+		var aSig = RLPF.ar(
+			aOsc*0.15, 
+			SinOsc.ar(lfreq / (att+rel), 0, rez * freq2, freq2), 
+			0.01
+		);
+		Out.ar(0, Pan2.ar(aSig, pan));
+	}
+).load(s);
+
+SynthDef("ts_fatty",
+	{ |freq=200, freq2=300, att=0.01, rel=0.2, lev=0.2, pan=0.0, lfreq=2.0, lmod=1.0,
+		rez=0.5|
+		var kEnv = EnvGen.kr(Env.perc(att, rel), 1, lev, doneAction:2);
+		var kfrq = XLine.kr(freq, freq2, att+rel);
+		var aOsc = SinOsc.ar(
+			kfrq, 
+			SinOsc.ar(kfrq*lmod, 0, kEnv*lmod), 
+			kEnv);
+		var aSig = RLPF.ar(aOsc* 0.1, freq2, 0.01);
+		Out.ar(0, Pan2.ar(aSig, pan));
+	}
+).load(s);
+
+
+SynthDef("ts_fawwy",
+	{ |freq=200, freq2=300, att=0.01, rel=0.2, lev=0.2, pan=0.0, lfreq=2.0, lmod=1.0,
+		rez=0.5|
+		var kEnv = EnvGen.kr(Env.perc(att, rel), 1, lev, doneAction:2);
+		var kfrq = XLine.kr(freq, freq2, att+rel);
+		var aOsc = SinOsc.ar(
+			kfrq, 
+			SinOsc.ar(kfrq*lmod, 0, kEnv*lmod), 
+			kEnv);
+		var aSig = RLPF.ar(aOsc, (aOsc * lmod) + (freq*lfreq), rez);
+		Out.ar(0, Pan2.ar(aSig, pan));
+	}
+).load(s);
+
+SynthDef("ts_fabby",
+	{ |freq=200, freq2=300, att=0.01, rel=0.2, lev=0.2, pan=0.0, lfreq=2.0, lmod=1.0,
+		rez=0.5|
+		var kEnv = EnvGen.kr(Env.perc(att, rel), 1, lev, doneAction:2);
+		var kfrq = XLine.kr(freq, freq2, att+rel);
+		var aOsc = SinOsc.ar(
+			kfrq, 
+			SinOsc.ar(kfrq*lmod, 0, kEnv*lmod), 
+			kEnv);
+		var aSig = LPF.ar(aOsc, freq*8, rez);
+		Out.ar(0, Pan2.ar(aSig, pan));
+	}
+).load(s);
+
+SynthDef("ts_cubxzx",
+	{ |freq=200, att=0.01, rel=0.2, lev=0.2, pan=0.0, lfreq=2.0|
+		// pretty expensive
+		var kEnv = EnvGen.kr(Env.perc(att, rel), 1, lev, doneAction:2);
+		var kPow = MulAdd(lfreq, 2, -1);
+		var aSig = SinOsc.ar(freq, 0, kEnv).pow(kPow);
+		Out.ar(0, Pan2.ar(aSig, pan));
+	}
+).load(s);
+
+SynthDef("ts_cubyyy",
+	{ |freq=200, att=0.01, rel=0.2, lev=0.2, pan=0.0, lfreq=2.0, lmod=4.0|
+		// pretty expensive
+		var kEnv = EnvGen.kr(Env.perc(att, rel), 1, lev, doneAction:2);
+		var kPow = XLine.kr(lmod+1, 1, att+rel);
+		var aSig = (SinOsc.ar(freq, 0, kEnv)+SinOsc.ar(freq+lfreq, 0, kEnv)).pow(kPow);
+		Out.ar(0, Pan2.ar(aSig, pan));
+	}
+).load(s);
+
+// osx only 
+SynthDef("ts_vosimwoop",
+	{ |freq=200, att=0.01, rel=0.2, lev=0.2, pan=0.0, freq2=201, lfreq=2, rez=0.5|
+		var kEnv = EnvGen.kr(Env.perc(att, rel), 1, lev, doneAction:2);
+		var kLine = XLine.kr(freq.max(freq2), freq2.min(freq), att+rel);
+		var aTrig = Phasor.ar(0, kLine, 1, -1);
+		var aOsc = VOSIM.ar(aTrig, freq2.max(freq), lfreq, rez, kEnv);
+		//var aOsc = SyncSaw.ar(freq2, freq, kEnv); // using rez for bw
+		var aSig = RLPF.ar(aOsc, kLine * 4, 0.1);
+		Out.ar(0, Pan2.ar(aSig, pan));
+	}
+).load(s);
+
+SynthDef("ts_vosim",
+	{ |freq=200, att=0.01, rel=0.2, lev=0.2, pan=0.0, freq2=201, lfreq=2, rez=0.5|
+		var kEnv = EnvGen.kr(Env.perc(att, rel), 1, lev, doneAction:2);
+		var aTrig = Phasor.ar(0, freq, 1, -1);
+		var aOsc = VOSIM.ar(aTrig, freq2.max(freq), lfreq, rez, kEnv);
+		//var aOsc = SyncSaw.ar(freq2, freq, kEnv); // using rez for bw
+		var aSig = RLPF.ar(aOsc, freq * 4, 0.1);
+		Out.ar(0, Pan2.ar(aSig, pan));
+	}
+).load(s);
+
