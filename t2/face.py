@@ -52,7 +52,7 @@ class Faces(object):
                                           useHarris = True)
 
         ret = self.order_points(features, roi)
-        return [self.quantize((x, y), roi[2:]) for x, y in ret]
+        return [self.quantize((x, y), roi[2:], 3.0) for x, y in ret]
         
     
     def quantize(self, pt, size, grain=5.0):

@@ -43,8 +43,8 @@ defs = ["ts_sin_touch",
         "ts_wassd",
         "ts_snxsd",
         "ts_snoossd",
-        "ts_vosim",
-        "ts_vosimwoop",
+        #"ts_vosim",
+        #"ts_vosimwoop",
         "ts_tri",
         "ts_tru",
         "ts_tro",
@@ -83,21 +83,15 @@ def random_note(scale, octave=None):
     omul = scale[-1] ** octave
     return note * root * omul
 
-def refresh_scale(notes):
-    while can_run:
-        graingen.scale = make_scale(notes)
-        time.sleep(random.randrange(0, 16, 4))
-
-def graingen():
-    counter = 0
-    while can_run:
+def graingen(scale):
+    while graingen.can_run:
         for i in range(200):
             beat = random.random() * random.choice([0.1, 0.2, 0.2, 0.4])
             #beat = random.random() * random.choice([6.0, 8.0, 10.0, 4.0])
             s.sendBundle(random.random() * beat,
                          [['s_new', random.choice(defs), -1, 0, 1,
-                           'freq',  random_note(graingen.scale),
-                           'freq2', random_note(graingen.scale),
+                           'freq',  random_note(scale),
+                           'freq2', random_note(scale),
                            'pan',   random.uniform(-1.0, 1.0),
                            'att',   random.uniform(0.0025, 0.04),
                            'rel',   random.uniform(0.1, 0.4),
@@ -108,17 +102,23 @@ def graingen():
                            'rez',   random.uniform(0.2, 0.8)
                            ]]),
         time.sleep(beat)
-graingen.scale = make_scale(scales["partch"])
+graingen.can_run = True
 
-def doctl():
-    refresh = threading.Thread(target=refresh_scale, args=[scales["bohlen-pierce"]])
-    refresh.start()
-
-def doloop():
-    gg = threading.Thread(target=graingen, args=[])
+def doloop(scale):
+    gg = threading.Thread(target=graingen, args=[scale])
     gg.start()
 
+def run(numvoices):
+    "can call this multiple times"
+    graingen.can_run = True
+    for i in range(numvoices):
+        scale = make_scale(scales["bohlen-pierce"])
+        doloop(scale)
+
+def stop():
+    "Stops all running synth loops."
+    graingen.can_run = False
+
 if __name__ == "__main__":
-    doloop()
-    doctl()
+    run(1)
 

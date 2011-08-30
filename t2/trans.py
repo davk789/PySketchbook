@@ -23,7 +23,7 @@ from pygame.locals import *
 import cv
 
 from face import Faces
-
+import synth
 
 WIDTH  = 800
 HEIGHT = 800
@@ -60,7 +60,9 @@ def update(screen, capture, faces):
     has_data = len(data) > 0
     if has_data == update.last_data:
         return
-
+    # running the synth
+    synth.run(len(data))
+    # ******* *** *****
     update.last_data = has_data
     
     #pg_frame = get_capture_image(cv_frame)

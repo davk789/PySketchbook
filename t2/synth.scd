@@ -268,10 +268,10 @@ SynthDef("ts_wubz",
 		Out.ar(0, Pan2.ar(aSig, pan));
 	}
 ).load(s);
-
+/*
 SynthDef("ts_porlon",
 	{ |freq=200, att=0.01, rel=0.2, lev=0.2, pan=0.0, lfreq=1.0|
-		// this uses too much cpu, do not
+		// this uses too much cpu, do not use
 		var kEnv = EnvGen.kr(Env.perc(att, rel), 1, lev, doneAction:2);
 		var aSig = Perlin3.ar(
 			SinOsc.ar(freq, 0, lfreq, 500),
@@ -281,7 +281,7 @@ SynthDef("ts_porlon",
 		Out.ar(0, Pan2.ar(aSig, pan));
 	}
 ).load(s);
-
+*/
 SynthDef("ts_fammy",
 	{ |freq=200, att=0.01, rel=0.2, lev=0.2, pan=0.0, lfreq=2.0, lmod=1.0|
 		var kEnv = EnvGen.kr(Env.perc(att, rel), 1, lev, doneAction:2);
@@ -385,7 +385,7 @@ SynthDef("ts_cubyyy",
 		Out.ar(0, Pan2.ar(aSig, pan));
 	}
 ).load(s);
-
+/*
 // osx only 
 SynthDef("ts_vosimwoop",
 	{ |freq=200, att=0.01, rel=0.2, lev=0.2, pan=0.0, freq2=201, lfreq=2, rez=0.5|
@@ -410,3 +410,4 @@ SynthDef("ts_vosim",
 	}
 ).load(s);
 
+*/
