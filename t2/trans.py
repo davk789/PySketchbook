@@ -21,9 +21,13 @@ import sys
 import pygame
 from pygame.locals import *
 import cv
+from scosc import controller
 
 from face import Faces
 import synth
+
+# controls audio computer - the target ip and the port from the synth listener
+controller = controller.Controller(("192.168.2.8", 57199)) 
 
 WIDTH  = 800
 HEIGHT = 800
@@ -61,7 +65,7 @@ def update(screen, capture, faces):
     if has_data == update.last_data:
         return
     # running the synth
-    synth.run(len(data))
+    run_synth(len(data))
     # ******* *** *****
     update.last_data = has_data
     
@@ -72,6 +76,9 @@ def update(screen, capture, faces):
     screen.blit(pg_frame, (0, 0))
     pygame.display.flip()
 update.last_data = False
+
+def run_synth(numvoices):
+    controller.sendMsg('run', numvoices)
 
 def main():
     

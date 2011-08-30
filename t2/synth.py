@@ -4,10 +4,11 @@ synth.py
 Run the sequencer from python here.
 
 """
+import socket
 import time
 import random
 import threading
-from scosc import controller
+from scosc import controller, tools
 
 s = controller.Controller(("127.0.0.1", 57110))
 
@@ -85,6 +86,7 @@ def random_note(scale, octave=None):
 
 def graingen(scale):
     while graingen.can_run:
+        print scale
         for i in range(200):
             beat = random.random() * random.choice([0.1, 0.2, 0.2, 0.4])
             #beat = random.random() * random.choice([6.0, 8.0, 10.0, 4.0])
@@ -110,15 +112,40 @@ def doloop(scale):
 
 def run(numvoices):
     "can call this multiple times"
+    print numvoices
     graingen.can_run = True
-    for i in range(numvoices):
-        scale = make_scale(scales["bohlen-pierce"])
-        doloop(scale)
+    if numvoices > 0:
+        for i in range(numvoices):
+            scale = make_scale(scales["bohlen-pierce"])
+            doloop(scale)
+    else:
+        stop()
+        
+def start_listener():
+    "This is how to receive data packets from a network."
+
+    udp_ip = "192.168.2.8" # the ip address of this computer on the network
+    udp_port = 57199
+    
+    sock = socket.socket(socket.AF_INET,    # from internet
+                         socket.SOCK_DGRAM) # UDP packet
+    
+    sock.bind((udp_ip, udp_port))
+    
+    while True:
+        data = sock.recvfrom(2**13)
+        
+        recv_msg(tools.decode(data[0]))
+
+def recv_msg(data):
+    "call run with the parameters properly parsed"
+    print data
 
 def stop():
     "Stops all running synth loops."
     graingen.can_run = False
 
 if __name__ == "__main__":
-    run(1)
+    start_listener()
+    #run(1)
 
