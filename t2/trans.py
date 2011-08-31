@@ -27,11 +27,13 @@ from face import Faces
 import synth
 
 # controls audio computer - the target ip and the port from the synth listener
-controller = controller.Controller(("192.168.2.8", 57199)) 
+controller = controller.Controller(("192.168.2.5", 57199)) 
 
 WIDTH  = 800
 HEIGHT = 800
 CAMERA = 0
+LOOKBACK = 10
+REFRESH_TIME = 50 # ms
 
 def get_capture_image(frame):
     "convert cv image to pygame image"
@@ -62,12 +64,13 @@ def update(screen, capture, faces):
     data = faces.analyze(cv_frame)
     
     has_data = len(data) > 0
-    if has_data == update.last_data:
+    
+    if not allow_update(has_data):
         return
+
     # running the synth
-    run_synth(len(data))
+    controller.sendMsg('run', len(data))
     # ******* *** *****
-    update.last_data = has_data
     
     #pg_frame = get_capture_image(cv_frame)
     pg_frame = get_solid_image((WIDTH, HEIGHT))
@@ -75,10 +78,22 @@ def update(screen, capture, faces):
     faces.draw(pg_frame, data)
     screen.blit(pg_frame, (0, 0))
     pygame.display.flip()
-update.last_data = False
 
-def run_synth(numvoices):
-    controller.sendMsg('run', numvoices)
+def allow_update(has_data):
+    # last == newest
+    allow_update.buffer.append(has_data)
+    if len(allow_update.buffer) >= LOOKBACK:
+        allow_update.buffer.pop(0)
+    else:
+        allow_update.active = has_data
+        return False
+    
+    if has_data == allow_update.buffer[0] and has_data != allow_update.active:
+        allow_update.active = has_data
+        return True
+    else:
+        return False
+allow_update.buffer = []
 
 def main():
     
@@ -98,21 +113,23 @@ def main():
     while True:
         for ev in pygame.event.get():
             if ev.type == QUIT:
+                controller.sendMsg('run', 0)
                 return
             elif ev.type == KEYDOWN:
                 if ev.key == K_f:
                     screen = toggle_fullscreen(screen)
                 elif ev.key == K_ESCAPE:
+                    controller.sendMsg('run', 0)
                     return
 
         update(screen, capture, faces)
-        pygame.time.wait(50)
+        pygame.time.wait(REFRESH_TIME)
 
 if __name__ == "__main__":
     main()
 else:
     print "This script is not to be imported. Run it directly dummy!"
-    raise Exception("import_error")
+    raise Exception("ImportError")
 
 
 
