@@ -123,8 +123,8 @@ def run(numvoices):
         
 def start_listener():
     "This is how to receive data packets from a network."
-
-    udp_ip = "192.168.2.8" # the ip address of this computer on the network
+    print "starting listener"
+    udp_ip = "192.168.2.5" # the ip address of this computer on the network
     udp_port = 57199
     
     sock = socket.socket(socket.AF_INET,    # from internet
@@ -139,7 +139,7 @@ def start_listener():
 
 def recv_msg(data):
     "call run with the parameters properly parsed"
-    print data
+    run(data[1])
 
 def stop():
     "Stops all running synth loops."
