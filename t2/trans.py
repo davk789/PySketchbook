@@ -7,12 +7,10 @@ Analyze faces in a webcam capture. Based on the data, draw a sigil and start a
 synth.
 
 TODO:
-1 - audio programming
-2 - analysis timing and behavior:
-     - draw a sigil when detecting the face and preserve that image - no 
-       re-analysis/redraw
-     - if no face is detected, remove the image and wait for new image
-3 - window resize behavior - test on dual-screen monitor
+1 - test window resize on dual-screen monitor
+2 - finish sound portion (ongoing)
+3 - drawing algorithm -- make it look nice
+4 - pass data from image to synth
 
 """
 
@@ -22,6 +20,7 @@ import pygame
 from pygame.locals import *
 import cv
 from scosc import controller
+from multiprocessing import Process
 
 from face import Faces
 import synth
@@ -69,7 +68,15 @@ def update(screen, capture, faces):
         return
 
     # running the synth
-    controller.sendMsg('run', len(data))
+    #controller.sendMsg('data', data)
+    # running the synth message loop does not work. The image analysis maxes 
+    # out the processor, and even using multiprocessing, I can't seem to get
+    # the synth code to run on a different core. Frustrating, but running the 
+    # synth code on the other computer is good enough.
+    #sp = Process(target=synth.run, args=[data])
+    #sp.start()
+    # synth has its own threading
+    synth.run(data)
     # ******* *** *****
     
     #pg_frame = get_capture_image(cv_frame)
@@ -80,7 +87,7 @@ def update(screen, capture, faces):
     pygame.display.flip()
 
 def allow_update(has_data):
-    # last == newest
+    """BBD signal delay comparison. Stabilize drawing."""
     allow_update.buffer.append(has_data)
     if len(allow_update.buffer) >= LOOKBACK:
         allow_update.buffer.pop(0)
@@ -108,7 +115,7 @@ def main():
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
 
     faces = Faces()
-    img = update(screen, capture, faces)
+    update(screen, capture, faces)
 
     while True:
         for ev in pygame.event.get():
@@ -121,15 +128,15 @@ def main():
                 elif ev.key == K_ESCAPE:
                     controller.sendMsg('run', 0)
                     return
-
         update(screen, capture, faces)
         pygame.time.wait(REFRESH_TIME)
 
 if __name__ == "__main__":
     main()
-else:
-    print "This script is not to be imported. Run it directly dummy!"
-    raise Exception("ImportError")
+    
+#else: # using process leverages __main__, throwing an error here
+#    print "This script is not to be imported. Run it directly dummy!"
+#    raise Exception("ImportError")
 
 
 
