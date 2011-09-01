@@ -7,7 +7,7 @@ Run the sequencer from python here.
 import socket
 import time
 import random
-import threading
+from multiprocessing import Process
 from scosc import controller, tools
 
 s = controller.Controller(("127.0.0.1", 57110))
@@ -84,9 +84,9 @@ def random_note(scale, octave=None):
     omul = scale[-1] ** octave
     return note * root * omul
 
-def graingen(scale):
+def graingen(scale, face):
     while graingen.can_run:
-        print scale
+        print face
         for i in range(200):
             beat = random.random() * random.choice([0.1, 0.2, 0.2, 0.4])
             #beat = random.random() * random.choice([6.0, 8.0, 10.0, 4.0])
@@ -106,18 +106,18 @@ def graingen(scale):
         time.sleep(beat)
 graingen.can_run = True
 
-def doloop(scale):
-    gg = threading.Thread(target=graingen, args=[scale])
+def doloop(scale, face):
+    gg = Process(target=graingen, args=[scale, face])
     gg.start()
 
-def run(numvoices):
+def run(faces):
     "can call this multiple times"
-    print numvoices
+    numvoices = len(faces)
     graingen.can_run = True
     if numvoices > 0:
-        for i in range(numvoices):
+        for face in faces:
             scale = make_scale(scales["bohlen-pierce"])
-            doloop(scale)
+            doloop(scale, face)
     else:
         stop()
         
@@ -137,15 +137,21 @@ def start_listener():
         
         recv_msg(tools.decode(data[0]))
 
-def recv_msg(data):
+def recv_msg(faces):
     "call run with the parameters properly parsed"
-    run(data[1])
+    run(osc_value('data', faces))
+
+def osc_value(key, data):
+    "assuming a list is a set of osc message pairs, get value for tag"
+    return data[data.index(key)+1]
 
 def stop():
     "Stops all running synth loops."
     graingen.can_run = False
 
 if __name__ == "__main__":
-    start_listener()
-    #run(1)
+    #start_listener()
+    # example output
+    # [(0.6666666666666666, 0.6666666666666666), (0.6666666666666666, 0), (0.3333333333333333, 0.6666666666666666), (0.6666666666666666, 0), (0.6666666666666666, 1.0), (0.6666666666666666, 0.6666666666666666), (0.3333333333333333, 0.6666666666666666), (0.6666666666666666, 0), (0.6666666666666666, 0), (0.6666666666666666, 0.3333333333333333), (0.3333333333333333, 0.6666666666666666), (0.3333333333333333, 0.3333333333333333), (1.0, 0.3333333333333333), (0, 0.3333333333333333), (0.6666666666666666, 1.0)]
+    run([(0.0, 0.25), (0.5, 0.75), (1.0, 0.0)])
 
