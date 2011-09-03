@@ -27,7 +27,7 @@ scales = {'bohlen-pierce': (1.0/1.0,25.0/21.0,9.0/7.0,7.0/5.0,5.0/3.0,9.0/5.0,
                             16.0/9.0,9.0/5.0,20.0/11.0,11.0/6.0,2.0/1.0)
           }
 
-defs = ["ts_sin_touch",
+synthdefs = ["ts_sin_touch",
         "ts_swoop",
         "ts_sin_touch", # double the chances of the 2 straight sin oscs
         "ts_swoop",     # this one too
@@ -44,8 +44,8 @@ defs = ["ts_sin_touch",
         "ts_wassd",
         "ts_snxsd",
         "ts_snoossd",
-        #"ts_vosim",
-        #"ts_vosimwoop",
+        "ts_vosim",
+        "ts_vosimwoop",
         "ts_tri",
         "ts_tru",
         "ts_tro",
@@ -84,7 +84,7 @@ def random_note(scale, octave=None):
     omul = scale[-1] ** octave
     return note * root * omul
 
-def graingen(scale, face):
+def graingen(scale, face, defs):
     while graingen.can_run:
         print face
         for i in range(200):
@@ -94,30 +94,54 @@ def graingen(scale, face):
                          [['s_new', random.choice(defs), -1, 0, 1,
                            'freq',  random_note(scale),
                            'freq2', random_note(scale),
-                           'pan',   random.uniform(-1.0, 1.0),
-                           'att',   random.uniform(0.0025, 0.04),
-                           'rel',   random.uniform(0.1, 0.4),
-                           'lmod',  random.uniform(0.001, 25.0),
-                           'lfreq', random.uniform(1.0, 4.0), # do not change range
+                           'pan',   next_value(face, -1.0, 1.0),
+                           'att',   next_value(face, 0.0025, 0.04),
+                           'rel',   next_value(face, 0.1, 0.4),
+                           'lmod',  next_value(face, 0.001, 25.0),
+                           'lfreq', next_value(face, 1.0, 4.0), # do not change range
                            'lag',   0.2,
-                           'lev',   random.uniform(0.01, 0.1),
-                           'rez',   random.uniform(0.2, 0.8)
+                           'lev',   next_value(face, 0.01, 0.1),
+                           'rez',   next_value(face, 0.2, 0.8)
                            ]]),
         time.sleep(beat)
 graingen.can_run = True
 
-def doloop(scale, face):
-    gg = Process(target=graingen, args=[scale, face])
-    gg.start()
+def next_value(data, low, high):
+    if next_value.count >= len(data):
+        next_value.count = 0
+
+    range = high - low
+    val = random.choice(data[next_value.count]) * range + low
+    
+    next_value.count += 1
+    return val
+next_value.count = 0
+
+#def doloop(scale, face, defs):
+#    gg = Process(target=graingen, args=[scale, face, defs])
+#    gg.start()
+
+def doloop(scale, face, defs):
+    graingen(scale, face, defs)
+
+def randsplit(data, sections=2):
+    """randomly split a list in to n number of sublists. does not check for
+    empty lists, so watch out.
+    """
+    ret = [[] for i in range(sections)]
+    for item in data:
+        ret[random.randrange(sections)].append(item)
+    return ret
 
 def run(faces):
-    "can call this multiple times"
+    "start or stop a synth loop"
     numvoices = len(faces)
     graingen.can_run = True
+    defs = randsplit(synthdefs, 3)
     if numvoices > 0:
         for face in faces:
             scale = make_scale(scales["bohlen-pierce"])
-            doloop(scale, face)
+            doloop(scale, face, defs)
     else:
         stop()
         
@@ -152,6 +176,7 @@ def stop():
 if __name__ == "__main__":
     #start_listener()
     # example output
-    # [(0.6666666666666666, 0.6666666666666666), (0.6666666666666666, 0), (0.3333333333333333, 0.6666666666666666), (0.6666666666666666, 0), (0.6666666666666666, 1.0), (0.6666666666666666, 0.6666666666666666), (0.3333333333333333, 0.6666666666666666), (0.6666666666666666, 0), (0.6666666666666666, 0), (0.6666666666666666, 0.3333333333333333), (0.3333333333333333, 0.6666666666666666), (0.3333333333333333, 0.3333333333333333), (1.0, 0.3333333333333333), (0, 0.3333333333333333), (0.6666666666666666, 1.0)]
-    run([(0.0, 0.25), (0.5, 0.75), (1.0, 0.0)])
+    # 
+    run([[(0.6666666666666666, 0.6666666666666666), (0.6666666666666666, 0), (0.3333333333333333, 0.6666666666666666), (0.6666666666666666, 0), (0.6666666666666666, 1.0), (0.6666666666666666, 0.6666666666666666), (0.3333333333333333, 0.6666666666666666), (0.6666666666666666, 0), (0.6666666666666666, 0), (0.6666666666666666, 0.3333333333333333), (0.3333333333333333, 0.6666666666666666), (0.3333333333333333, 0.3333333333333333), (1.0, 0.3333333333333333), (0, 0.3333333333333333), (0.6666666666666666, 1.0)]])
+    #run([[(0.0, 0.25), (0.5, 0.75), (1.0, 0.0)], [(0.0, 0.25), (0.5, 0.75), (1.0, 0.0)]])
 
