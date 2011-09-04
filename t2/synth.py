@@ -3,17 +3,22 @@ synth.py
 
 Run the sequencer from python here.
 
+TODO:
+1 - check that the data is all being generated properly: check that randsplit
+    doesn't cause any problems with zero defs in a list
+
 """
 import socket
 import time
 import random
-from multiprocessing import Process
+from multiprocessing import Process, Value
 from scosc import controller, tools
 
-s = controller.Controller(("127.0.0.1", 57110))
-
+threads = []
+#s = controller.Controller(("127.0.0.1", 57110))
+s = controller.Controller(("192.168.2.5", 57110))
+run_flag = Value('I', 1)
 # all scales will be expressed as intervals
-can_run = True
 root = 55.0
 scales = {'bohlen-pierce': (1.0/1.0,25.0/21.0,9.0/7.0,7.0/5.0,5.0/3.0,9.0/5.0,
                             15.0/7.0,7.0/3.0,25.0/9.0,3.0/1.0),
@@ -84,27 +89,26 @@ def random_note(scale, octave=None):
     omul = scale[-1] ** octave
     return note * root * omul
 
-def graingen(scale, face, defs):
-    while graingen.can_run:
-        print face
-        for i in range(200):
-            beat = random.random() * random.choice([0.1, 0.2, 0.2, 0.4])
-            #beat = random.random() * random.choice([6.0, 8.0, 10.0, 4.0])
-            s.sendBundle(random.random() * beat,
+def graingen(scale, face, defs, can_run):
+    while can_run.value:
+        #for i in range(100):
+        for i in range(50):
+            #beat = random.random() * random.choice([0.1, 0.2, 0.2, 0.4])
+            beat = random.random() * random.choice([0.5, 0.25, 0.125])
+            s.sendBundle(random.random() * beat + 2.0,
                          [['s_new', random.choice(defs), -1, 0, 1,
                            'freq',  random_note(scale),
                            'freq2', random_note(scale),
                            'pan',   next_value(face, -1.0, 1.0),
-                           'att',   next_value(face, 0.0025, 0.04),
-                           'rel',   next_value(face, 0.1, 0.4),
+                           'att',   random.uniform(0.0025, 0.04),
+                           'rel',   random.uniform(0.1, 0.4),
                            'lmod',  next_value(face, 0.001, 25.0),
                            'lfreq', next_value(face, 1.0, 4.0), # do not change range
                            'lag',   0.2,
-                           'lev',   next_value(face, 0.01, 0.1),
+                           'lev',   random.triangular(0.01, 0.1, 0.015),
                            'rez',   next_value(face, 0.2, 0.8)
-                           ]]),
+                           ]])
         time.sleep(beat)
-graingen.can_run = True
 
 def next_value(data, low, high):
     if next_value.count >= len(data):
@@ -117,12 +121,12 @@ def next_value(data, low, high):
     return val
 next_value.count = 0
 
-#def doloop(scale, face, defs):
-#    gg = Process(target=graingen, args=[scale, face, defs])
-#    gg.start()
+def doloop(scale, face, defs, can_run):
+    threads.append(Process(target=graingen, args=[scale, face, defs, can_run]))
+    threads[-1].start()
 
-def doloop(scale, face, defs):
-    graingen(scale, face, defs)
+#def doloop(scale, face, defs, can_run):
+#    graingen(scale, face, defs, can_run)
 
 def randsplit(data, sections=2):
     """randomly split a list in to n number of sublists. does not check for
@@ -137,11 +141,12 @@ def run(faces):
     "start or stop a synth loop"
     numvoices = len(faces)
     graingen.can_run = True
-    defs = randsplit(synthdefs, 3)
+    defs = randsplit(synthdefs, numvoices)
+    run_flag.value = 1
     if numvoices > 0:
-        for face in faces:
+        for i in range(numvoices):
             scale = make_scale(scales["bohlen-pierce"])
-            doloop(scale, face, defs)
+            doloop(scale, faces[i], defs[i], run_flag)
     else:
         stop()
         
@@ -171,12 +176,26 @@ def osc_value(key, data):
 
 def stop():
     "Stops all running synth loops."
-    graingen.can_run = False
+    global threads
+    run_flag.value = 0
+    #wait for threads to finish and then clear the list
+    for thread in threads:
+        thread.join()
+    threads = []
+
+def test(numvoices=1, quant=4):
+    data = []
+    for i in range(numvoices):
+        face = [(random.randrange(0, quant) / float(quant-1),
+                 random.randrange(0, quant) / float(quant-1))
+                 for i in range(random.randrange(3, 15))]
+        data.append(face)
+    run(data)
+        
 
 if __name__ == "__main__":
     #start_listener()
     # example output
     # 
-    run([[(0.6666666666666666, 0.6666666666666666), (0.6666666666666666, 0), (0.3333333333333333, 0.6666666666666666), (0.6666666666666666, 0), (0.6666666666666666, 1.0), (0.6666666666666666, 0.6666666666666666), (0.3333333333333333, 0.6666666666666666), (0.6666666666666666, 0), (0.6666666666666666, 0), (0.6666666666666666, 0.3333333333333333), (0.3333333333333333, 0.6666666666666666), (0.3333333333333333, 0.3333333333333333), (1.0, 0.3333333333333333), (0, 0.3333333333333333), (0.6666666666666666, 1.0)]])
-    #run([[(0.0, 0.25), (0.5, 0.75), (1.0, 0.0)], [(0.0, 0.25), (0.5, 0.75), (1.0, 0.0)]])
+    test()
 
