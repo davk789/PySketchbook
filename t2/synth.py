@@ -140,10 +140,9 @@ def randsplit(data, sections=2):
 def run(faces):
     "start or stop a synth loop"
     numvoices = len(faces)
-    graingen.can_run = True
-    defs = randsplit(synthdefs, numvoices)
-    run_flag.value = 1
     if numvoices > 0:
+        run_flag.value = 1
+        defs = randsplit(synthdefs, numvoices)
         for i in range(numvoices):
             scale = make_scale(scales["bohlen-pierce"])
             doloop(scale, faces[i], defs[i], run_flag)
@@ -190,7 +189,8 @@ def test(numvoices=1, quant=4):
                  random.randrange(0, quant) / float(quant-1))
                  for i in range(random.randrange(3, 15))]
         data.append(face)
-    run(data)
+    #run(data)
+    run([])
         
 
 if __name__ == "__main__":
