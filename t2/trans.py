@@ -10,7 +10,6 @@ TODO:
 1 - test window resize on dual-screen monitor
 2 - finish sound portion (ongoing)
 3 - drawing algorithm -- make it look nice
-4 - pass data from image to synth
 
 """
 
@@ -20,7 +19,6 @@ import pygame
 from pygame.locals import *
 import cv
 from scosc import controller
-from multiprocessing import Process
 
 from face import Faces
 import synth
@@ -63,22 +61,11 @@ def update(screen, capture, faces):
     data = faces.analyze(cv_frame)
     
     has_data = len(data) > 0
-    
     if not allow_update(has_data):
         return
-
-    # running the synth
-    #controller.sendMsg('data', data)
-    # running the synth message loop does not work. The image analysis maxes 
-    # out the processor, and even using multiprocessing, I can't seem to get
-    # the synth code to run on a different core. Frustrating, but running the 
-    # synth code on the other computer is good enough.
-    #sp = Process(target=synth.run, args=[data])
-    #sp.start()
-    # synth has its own threading
-    synth.run(data)
-    # ******* *** *****
     
+    synth.run(data)
+
     #pg_frame = get_capture_image(cv_frame)
     pg_frame = get_solid_image((WIDTH, HEIGHT))
 
@@ -103,9 +90,7 @@ def allow_update(has_data):
 allow_update.buffer = []
 
 def main():
-    
     pygame.init()
-    
     capture = cv.CaptureFromCAM(CAMERA)
     if not capture:
         print "Could not get the cam. Crashing now..."
@@ -133,10 +118,7 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
-#else: # using process leverages __main__, throwing an error here
-#    print "This script is not to be imported. Run it directly dummy!"
-#    raise Exception("ImportError")
+
 
 
 
