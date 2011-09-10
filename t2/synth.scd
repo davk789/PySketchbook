@@ -1,8 +1,15 @@
 /**
  * 
- * Contain only the SynthDefs. Try to run the synths routine through python only.
+ * SynthDefs to be used in synth.py. Also try maintaining a second server for
+ * multiprocessing optimization.
  * 
  */
+// Server 2
+t = Server('auxiliary', NetAddr("127.0.0.1", 57111));
+t.makeWindow;
+s.boot; t.boot;
+
+// SynthDefs
 SynthDef("ts_sin_touch",
 	{ |freq=200, att=0.01, rel=0.2, lev=0.2, pan=0.0|
 		var kEnv = EnvGen.kr(Env.perc(att, rel), 1, lev, doneAction:2);
@@ -114,12 +121,12 @@ SynthDef("ts_zwerp",
 ).load(s);
 
 SynthDef("ts_zow",
-	{ |freq=200, freq2=100, att=0.01, rel=0.2, lev=0.2, pan=0.0|
+	{ |freq=200, freq2=100, att=0.01, rel=0.2, lev=0.2, pan=0.0, lfreq=2.0|
 		var kLine = XLine.kr(freq, freq2, att+rel);
 		var kEnv = EnvGen.kr(Env.perc(att, rel), 1, lev, doneAction:2);
-		var aPhase1 = Phasor.ar(0, (freq/8192).min(8192), 0, 2pi, DC.ar(2pi*0.25));
+		var aPhase1 = Phasor.ar(0, (kLine/8192).min(8192), 0, 2pi, DC.ar(2pi*0.25));
 		var aRMPhase = (aPhase1/2pi).neg + 1;
-		var aPhase2 = Phasor.ar(aRMPhase, (kLine/8192).min(8192), 0, 2pi, DC.ar(2pi*0.25));
+		var aPhase2 = Phasor.ar(aRMPhase, (kLine+lfreq/8192).min(8192), 0, 2pi, DC.ar(2pi*0.25));
 		var aOsc1 = SinOsc.ar(0, aPhase1, kEnv);
 		var aOsc2 = SinOsc.ar(0, aPhase2, kEnv * aRMPhase);
 		var aSig = LPF.ar((aOsc1 + aOsc2) * 0.5, freq2, 0.5);
@@ -170,6 +177,24 @@ SynthDef("ts_wassd",
 	}
 ).load(s);
 
+SynthDef("ts_wabbd",
+	{ |freq=200, freq2=300, att=0.01, rel=0.2, lev=0.2, pan=0.0, rez=0.5|
+		var kLine = XLine.kr(freq, freq2, att+rel);
+		var kEnv = EnvGen.kr(Env.perc(att, rel), 1, lev, doneAction:2);
+		var aSig = VarSaw.ar(kLine, 0, rez, kEnv); // using rez for bw
+		Out.ar(0, Pan2.ar(aSig, pan));
+	}
+).load(s);
+
+SynthDef("ts_waggd",
+	{ |freq=200, freq2=300, att=0.01, rel=0.2, lev=0.2, pan=0.0, rez=0.5|
+		var kLine = XLine.kr(freq, freq2, att+rel);
+		var kEnv = EnvGen.kr(Env.perc(att, rel), 1, lev, doneAction:2);
+		var aSig = VarSaw.ar(kLine, 0, rez * kEnv, kEnv); // using rez for bw
+		Out.ar(0, Pan2.ar(aSig, pan));
+	}
+).load(s);
+
 SynthDef("ts_snxsd",
 	{ |freq=200, att=0.01, rel=0.2, lev=0.2, pan=0.0, freq2=201|
 		var kEnv = EnvGen.kr(Env.perc(att, rel), 1, lev, doneAction:2);
@@ -201,7 +226,7 @@ SynthDef("ts_tree",
 	{ |freq=200, freq2=230, att=0.01, rel=0.2, lev=0.2, pan=0.0|
 		var kEnv = EnvGen.kr(Env.perc(att, rel), 1, lev, doneAction:2);
 		var kLine = XLine.kr(freq, freq2, att+rel);
-		var aSig = LFTri.ar(freq, 0, kEnv);
+		var aSig = LFTri.ar(kLine, 0, kEnv);
 		Out.ar(0, Pan2.ar(aSig, pan));
 	}
 ).load(s);

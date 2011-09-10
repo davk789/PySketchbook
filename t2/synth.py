@@ -17,7 +17,7 @@ from scosc import controller, tools, patterns
 threads = []
 #s = controller.Controller(("127.0.0.1", 57110))
 s = [controller.Controller(("192.168.2.5", 57110)),
-     controller.Controller(("192.168.2.5", 57111))]
+     controller.Controller(("192.168.2.5", 57210))]
 run_flag = Value('I', 1)
 # all scales will be expressed as intervals
 root = 55.0
@@ -34,43 +34,45 @@ scales = {'bohlen-pierce': (1.0/1.0,25.0/21.0,9.0/7.0,7.0/5.0,5.0/3.0,9.0/5.0,
           }
 
 synthdefs = ["ts_sin_touch",
-        "ts_swoop",
-        "ts_sin_touch", # double the chances of the 2 straight sin oscs
-        "ts_swoop",     # this one too
-        "ts_hash",
-        "ts_hash_blub",
-        "ts_chorwow",
-        "ts_formone",
-        "ts_formoomp",
-        "ts_zilk",
-        "ts_zwoop",
-        "ts_zwerp",
-        "ts_bausch",
-        "ts_bissosch",
-        "ts_wassd",
-        "ts_snxsd",
-        "ts_snoossd",
-        "ts_vosim",
-        "ts_vosimwoop",
-        "ts_tri",
-        "ts_tru",
-        "ts_tro",
-        "ts_tree",
-        "ts_trs",
-        "ts_squine",
-        "ts_squeene",
-        "ts_squiine",
-        "ts_wub",
-        "ts_wubz",
-        "ts_fammy",
-        "ts_fammymodsw",
-        "ts_fawwy", 
-        "ts_fassy", 
-        "ts_fatty",
-        "ts_fabby", 
-        "ts_cubxzx",
-        "ts_cubyyy",
-        ]
+             "ts_swoop",
+             "ts_sin_touch", # double the chances of the 2 straight sin oscs
+             "ts_swoop",     # this one too
+             "ts_hash",
+             "ts_hash_blub",
+             "ts_chorwow",
+             "ts_formone",
+             "ts_formoomp",
+             "ts_zilk",
+             "ts_zwoop",
+             "ts_zwerp",
+             "ts_bausch",
+             "ts_bissosch",
+             "ts_wassd",
+             "ts_wabbd",
+             "ts_waggd",
+             "ts_snxsd",
+             "ts_snoossd",
+             "ts_vosim",
+             "ts_vosimwoop",
+             "ts_tri",
+             "ts_tru",
+             "ts_tro",
+             "ts_tree",
+             "ts_trs",
+             "ts_squine",
+             "ts_squeene",
+             "ts_squiine",
+             "ts_wub",
+             "ts_wubz",
+             "ts_fammy",
+             "ts_fammymodsw",
+             "ts_fawwy", 
+             "ts_fassy", 
+             "ts_fatty",
+             "ts_fabby", 
+             "ts_cubxzx",
+             "ts_cubyyy",
+             ]
 #defs = ["ts_fammy", "ts_fawwy"]
 
 def make_rscale(notes):
