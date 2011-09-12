@@ -106,10 +106,10 @@ class Faces(object):
         cv.CvtColor(frame, gray, cv.CV_RGB2GRAY)
         return gray
 
-    def draw(self, image, data):
+    def draw_old(self, image, data):
         "scale and draw the data"
         for face in data:
-            scaled =  [(x*image.get_width(), y*image.get_height()) for x, y in face]
+            scaled = [(x*image.get_width(), y*image.get_height()) for x, y in face]
             pygame.draw.lines(image, 
                               pygame.Color(random.randrange(0, 255),
                                            random.randrange(0, 255),
@@ -117,13 +117,33 @@ class Faces(object):
                               0, # filled
                               scaled, 
                               2)
-        
+    def draw(self, image, data):
+        for face in data:
+            scaled = [(x*image.get_width(), y*image.get_height()) for x, y in face]
+            numpoints = len(scaled)
+            for i in range(numpoints):
+                # (Surface, color, Rect, start_angle, stop_angle, width=1)
+                print (scaled[i-1][0],
+                       scaled[i-1][1],
+                       scaled[i][0],
+                       scaled[i][1])
+                pygame.draw.arc(image,
+                                pygame.Color(random.randrange(0, 255),
+                                             random.randrange(0, 255),
+                                             random.randrange(0, 255)),
+                                (scaled[i-1], scaled[i]), # rect
+                                0, # start angle
+                                2, # stop angle
+                                2 # width
+                                )
+                
+
 def get_distance(start, end):
     a = abs(end[0] - start[0])
     b = abs(end[1] - start[1])
     return math.sqrt(pow(a,2) + pow(b, 2))
 
-def test():
+def testz():
     capture = cv.CaptureFromCAM(0)
     if not capture:
         print "Could not get the cam. Crashing now..."
@@ -133,7 +153,10 @@ def test():
     print faec.get_image()
     sys.exit(0)
 
+def test():
+    import trans
+    trans.test()
+
 if __name__ == "__main__":
-    print "creating the class"
     test()
 

@@ -8,12 +8,13 @@ synth.
 
 TODO:
 1 - test window resize on dual-screen monitor
-2 - finish sound portion (ongoing)
+2 - finish sound portion (mostly done)
 3 - drawing algorithm -- make it look nice
 
 """
 
 import sys
+import random
 
 import pygame
 from pygame.locals import *
@@ -66,6 +67,23 @@ def update(screen, capture, faces):
     
     synth.run(data)
 
+    update_display(screen, data, faces)
+
+def fake_update(screen, faces):
+    """prepare images, faking the facial data with random data"""
+    numfaces = 1
+    quant = 4.0
+    data = []
+    for i in range(numfaces):
+        face = [(random.randrange(0, quant) / float(quant-1),
+                 random.randrange(0, quant) / float(quant-1))
+                 for i in range(random.randrange(3, 15))]
+        data.append(face)
+
+    update_display(screen, data, faces)
+    
+def update_display(screen, data, faces):
+    "actually draw the display"
     #pg_frame = get_capture_image(cv_frame)
     pg_frame = get_solid_image((WIDTH, HEIGHT))
 
@@ -100,6 +118,7 @@ def main():
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
 
     faces = Faces()
+
     update(screen, capture, faces)
 
     while True:
@@ -114,11 +133,33 @@ def main():
                     controller.sendMsg('run', 0)
                     return
         update(screen, capture, faces)
+            
+        pygame.time.wait(REFRESH_TIME)
+
+def test():
+    "hacked version of run(). the testing should be better integrated."
+    pygame.init()
+    pygame.display.set_caption("Transmutation Study Test")
+    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+
+    faces = Faces()
+
+    fake_update(screen, faces)
+    while True:
+        for ev in pygame.event.get():
+            if ev.type == QUIT:
+                return
+            elif ev.type == KEYDOWN:
+                if ev.key == K_f:
+                    screen = toggle_fullscreen(screen)
+                elif ev.key == K_ESCAPE:
+                    return
+            
         pygame.time.wait(REFRESH_TIME)
 
 if __name__ == "__main__":
-    main()
-
+    test()
+    #main()
 
 
 

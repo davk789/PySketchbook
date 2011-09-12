@@ -4,8 +4,9 @@ synth.py
 Run the sequencer from python here.
 
 TODO:
-1 - check that the data is all being generated properly: check that randsplit
-    doesn't cause any problems with zero defs in a list
+1 - test out other scales
+2 - the rhythmic quantization should be based on the facial data, rather than
+    a random generator
 
 """
 import socket
@@ -125,13 +126,18 @@ def graingen(notes, face, defs, can_run):
     scale = make_fscale(notes, face)
     fseq = patterns.Pseq(scale)
     while can_run.value:
-        server = get_server()
+        server = get_server() # cyclt through available servers
+        basetime = time.time()
         #for i in range(100):
+        beat = random.random() * random.choice([0.5, 0.25, 0.125])
         for i in range(50):
             #beat = random.random() * random.choice([0.1, 0.2, 0.2, 0.4])
-            beat = random.random() * random.choice([0.5, 0.25, 0.125])
+            
             #beat = random.random() * random.choice([1.5, 1.25, 1.125])
-            server.sendBundle(random.random() * beat + 2.0,
+            # the quantization factor should be calculated from a face
+            quant = random.choice([4,8,16,8,8,2,32])
+            rbeat = random.randrange(quant) * (1.0/float(quant))# 0-1 value, quantized
+            server.sendBundleAbs(rbeat * beat + basetime + 2.0,
                          [['s_new', random.choice(defs), -1, 0, 1,
 #                           'freq',  random_freq(scale, notes[-1]),
 #                           'freq2', random_freq(scale, notes[-1]),
