@@ -50,7 +50,7 @@ class Faces(object):
                                           0.01, 
                                           useHarris = True)
 
-        return [self.quantize((x, y), roi[2:], 3.0) for x, y in features]
+        return [self.quantize((x, y), roi[2:], 6.0) for x, y in features]
         
     
     def quantize(self, pt, size, grain=5.0):
@@ -99,34 +99,89 @@ class DrawManager(object):
     def __init__(self):
         self.drawfuncs = [self.draw_circle,
                           self.draw_line,
-                          self.draw_arc]
-        self.pen_width = 5
-        self.pen_color = pygame.Color(random.randrange(0, 255),
-                                      random.randrange(0, 255),
-                                      random.randrange(0, 255))
+                          self.draw_arc,
+                          self.draw_lines]
+        self.pen_width = 15
+        self.pen_color = pygame.Color(random.choice((0, 255)),
+                                      random.choice((0, 255)),
+                                      random.choice((0, 255)))
+    
     def draw(self, image, data):
         for face in data:
-            scaled = [(x*image.get_width(), y*image.get_height()) for x, y in face]
+            scaled = [(x*image.get_width(), y*image.get_height()) 
+                      for x, y 
+                      in face]
             numpoints = len(scaled)
             for i in range(numpoints):
                 random.choice(self.drawfuncs)(image, scaled, i)
 
+    def draw_lines(self, image, data, i):
+        seg_start = data[i]
+        for i in range(len(data) * 2):
+            # use a better randomization algorithm, to specify a direction, end
+            # point, etc.
+            seg_end = self.next_segment(seg_start, 1)
+            pygame.draw.line(image, 
+                             self.pen_color, 
+                             seg_start,
+                             seg_end, 
+                             self.pen_width)
+            seg_end = seg_start
 
-    def draw_line(self, image, data, i):        
-        print data[i-1]
+    def get_direction(self, data, i):
+        """Specify a direction that points to the area with the greatest number
+        of points."""
+        x_move = [0, 0, 0]
+        y_move = [0, 0, 0]
+        for pt in data:
+            # the conditionals should exclude the point itself. also add this 
+            # later
+            if pt[0] < data[i][0]:
+                x_move[0] += 1
+            if pt[0] > data[i][0]:
+                x_move[2] += 1
+            else:
+                x_move[1] += 1
+
+            if pt[1] < data[i][1]:
+                y_move[0] += 1
+            if pt[1] > data[i][1]:
+                y_move[2] += 1
+            else:
+                y_move[1] += 1
         
+        # max() only returns the first value without optional starting index
+        # argument. add that argument later to prevent directions from favoring
+        # the negative
+        x = x_move.index(max(x_move)) - 1
+        y = y_move.index(max(y_move)) - 1
+        
+        return x, y
+        
+        
+                
+
+    def next_segment(self, point, direction):
+        """Thinking that the randomization algo should be isolated a little 
+        from self.draw_lines()"""
+        
+        
+
+    def draw_line(self, image, data, i):                
         pygame.draw.line(image, 
                          self.pen_color, 
-                         data[i-1], 
-                         data[i],
+                         data[i], 
+                         data[self.nearest_index(data[i], data)],
                          self.pen_width)
     
     def draw_circle(self, image, data, i):
-        
+        nearest = self.nearest_index(data[i], data)
+        rdenom = random.choice([1, 2, 4, 8, 8, 8, 16, 16])
+        radius = get_distance(data[i], data[nearest]) / rdenom
         pygame.draw.circle(image,
                            self.pen_color,
                            [int(n) for n in data[i]],
-                           25, # radius
+                           int(radius), # radius
                            self.pen_width   # width
                            )
 

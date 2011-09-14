@@ -17,9 +17,11 @@ import sys
 import random
 
 import pygame
+from pygame import surfarray
 from pygame.locals import *
 import cv
 from scosc import controller
+from scipy import ndimage
 
 from face import Faces
 import synth
@@ -88,6 +90,12 @@ def update_display(screen, data, faces):
     pg_frame = get_solid_image((WIDTH, HEIGHT))
 
     faces.draw(pg_frame, data)
+
+    # add a blur - very glitchy but kind of interesting
+    #arr_frame = surfarray.array2d(pg_frame)
+    #arr_frame = ndimage.filters.gaussian_filter(arr_frame, 3.0)
+    #pg_frame = surfarray.make_surface(arr_frame)
+    
     screen.blit(pg_frame, (0, 0))
     pygame.display.flip()
 
