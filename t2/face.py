@@ -6,7 +6,6 @@ algorithm from the detected features.
 
 """
 
-# this would be one way to forbid running scripts as main
 import sys, platform, math, random
 
 import cv
@@ -110,32 +109,39 @@ class Faces(object):
         "scale and draw the data"
         for face in data:
             scaled = [(x*image.get_width(), y*image.get_height()) for x, y in face]
-            pygame.draw.lines(image, 
-                              pygame.Color(random.randrange(0, 255),
-                                           random.randrange(0, 255),
-                                           random.randrange(0, 255)), 
-                              0, # filled
-                              scaled, 
-                              2)
+
     def draw(self, image, data):
         for face in data:
             scaled = [(x*image.get_width(), y*image.get_height()) for x, y in face]
             numpoints = len(scaled)
             for i in range(numpoints):
-                # (Surface, color, Rect, start_angle, stop_angle, width=1)
-                print (scaled[i-1][0],
-                       scaled[i-1][1],
-                       scaled[i][0],
-                       scaled[i][1])
-                pygame.draw.arc(image,
-                                pygame.Color(random.randrange(0, 255),
-                                             random.randrange(0, 255),
-                                             random.randrange(0, 255)),
-                                (scaled[i-1], scaled[i]), # rect
-                                0, # start angle
-                                2, # stop angle
-                                2 # width
-                                )
+                self.draw_line(image, scaled, i)
+
+    def draw_line(self, image, data, i):        
+        print data[i-1]
+        pygame.draw.line(image, 
+                          pygame.Color(random.randrange(0, 255),
+                                       random.randrange(0, 255),
+                                       random.randrange(0, 255)), 
+                          0, # filled
+                          (data[i-1], data[i]),
+                         2)        
+
+    def draw_arc(self, image, data, i):
+        # (Surface, color, Rect, start_angle, stop_angle, width=1)
+        size = (abs(data[i][0] - data[i-1][0]), 
+                abs(data[i][1] - data[i-1][1]))
+        print scaled[i-1], size
+        pygame.draw.arc(image,
+                        pygame.Color(random.randrange(0, 255),
+                                     random.randrange(0, 255),
+                                     random.randrange(0, 255)),
+                        (data[i-1], size), # rect
+                        0.0, # start angle
+                        2.0, # stop angle
+                        2 # width
+                        )
+
                 
 
 def get_distance(start, end):
