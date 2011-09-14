@@ -117,10 +117,13 @@ class DrawManager(object):
 
     def draw_lines(self, image, data, i):
         seg_start = data[i]
+        direction = self.get_direction(data, i)
         for i in range(len(data) * 2):
             # use a better randomization algorithm, to specify a direction, end
             # point, etc.
-            seg_end = self.next_segment(seg_start, 1)
+            seg_end = [d * random.randrange(0, 51, 50)
+                       for d
+                       in direction]
             pygame.draw.line(image, 
                              self.pen_color, 
                              seg_start,
@@ -158,15 +161,8 @@ class DrawManager(object):
         
         return x, y
         
-        
-                
 
-    def next_segment(self, point, direction):
-        """Thinking that the randomization algo should be isolated a little 
-        from self.draw_lines()"""
         
-        
-
     def draw_line(self, image, data, i):                
         pygame.draw.line(image, 
                          self.pen_color, 
