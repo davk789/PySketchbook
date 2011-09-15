@@ -73,7 +73,7 @@ def update(screen, capture, faces):
 
 def fake_update(screen, faces):
     """prepare images, faking the facial data with random data"""
-    numfaces = 1
+    numfaces = random.randrange(1, 4)
     quant = 4.0
     data = []
     for i in range(numfaces):

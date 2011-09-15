@@ -50,7 +50,7 @@ class Faces(object):
                                           0.01, 
                                           useHarris = True)
 
-        return [self.quantize((x, y), roi[2:], 6.0) for x, y in features]
+        return [self.quantize((x, y), roi[2:], 12.0) for x, y in features]
         
     
     def quantize(self, pt, size, grain=5.0):
@@ -101,7 +101,7 @@ class DrawManager(object):
                           self.draw_line,
                           self.draw_arc,
                           self.draw_lines]
-        self.pen_width = 15
+        self.pen_width = 1
         self.pen_color = pygame.Color(random.choice((0, 255)),
                                       random.choice((0, 255)),
                                       random.choice((0, 255)))
@@ -113,17 +113,21 @@ class DrawManager(object):
                       in face]
             numpoints = len(scaled)
             for i in range(numpoints):
+                self.pen_width = random.randrange(1, 11, 3)
                 random.choice(self.drawfuncs)(image, scaled, i)
 
     def draw_lines(self, image, data, i):
         seg_start = data[i]
-        direction = self.get_direction(data, i)
-        for i in range(len(data) * 2):
+        
+        #for i in range(len(data) * 2):
+        for i in range(25):
             # use a better randomization algorithm, to specify a direction, end
             # point, etc.
-            seg_end = [d * random.randrange(0, 51, 50)
-                       for d
-                       in direction]
+            direction = self.get_direction(data, seg_start)
+            seg_end = (direction[0] * random.choice((0, 50, 50)) + seg_start[0],
+                       direction[1] * random.choice((0, 50, 50)) + seg_start[1])
+            print seg_start, seg_end, direction
+                       
             pygame.draw.line(image, 
                              self.pen_color, 
                              seg_start,
@@ -131,35 +135,35 @@ class DrawManager(object):
                              self.pen_width)
             seg_end = seg_start
 
-    def get_direction(self, data, i):
+    def get_direction(self, data, loc):
         """Specify a direction that points to the area with the greatest number
         of points."""
-        x_move = [0, 0, 0]
-        y_move = [0, 0, 0]
+        x_move = 0
+        y_move = 0
         for pt in data:
             # the conditionals should exclude the point itself. also add this 
             # later
-            if pt[0] < data[i][0]:
-                x_move[0] += 1
-            if pt[0] > data[i][0]:
-                x_move[2] += 1
-            else:
-                x_move[1] += 1
+            if pt[0] < loc[0]:
+                x_move -= 1
+            if pt[0] > loc[0]:
+                x_move += 1
 
-            if pt[1] < data[i][1]:
-                y_move[0] += 1
-            if pt[1] > data[i][1]:
-                y_move[2] += 1
-            else:
-                y_move[1] += 1
+            if pt[1] < loc[1]:
+                y_move -= 1
+            if pt[1] > loc[1]:
+                y_move += 1
         
-        # max() only returns the first value without optional starting index
-        # argument. add that argument later to prevent directions from favoring
-        # the negative
-        x = x_move.index(max(x_move)) - 1
-        y = y_move.index(max(y_move)) - 1
+        if x_move > 0:
+            x_move = 1
+        elif x_move < 0:
+            x_move = -1 
         
-        return x, y
+        if y_move > 0:
+            y_move = 1
+        elif y_move < 0:
+            y_move = -1
+        
+        return x_move, y_move
         
 
         
