@@ -1,3 +1,4 @@
+
 """
 face.py
 
@@ -7,6 +8,7 @@ algorithm from the detected features.
 """
 
 import sys, platform, math, random
+import copy
 
 import cv
 import pygame
@@ -24,6 +26,7 @@ class Faces(object):
         else:
             self.cascade = cv.Load("/opt/local/var/macports/build/_opt_local_var_macports_sources_rsync.macports.org_release_ports_graphics_opencv/opencv/work/OpenCV-2.2.0/data/haarcascades/haarcascade_frontalface_default.xml")
         self.pen = DrawManager()
+    
     def analyze(self, frame):
         return [self.get_points_of_interest(frame, (x,y,w,h)) 
                 for (x,y,w,h),n 
@@ -51,7 +54,7 @@ class Faces(object):
                                           useHarris = True)
 
         return [self.quantize((x, y), roi[2:], 12.0) for x, y in features]
-        
+    
     
     def quantize(self, pt, size, grain=5.0):
         """
@@ -75,7 +78,7 @@ class Faces(object):
         cv.Copy(img, cropped)
         cv.ResetImageROI(img)
         return cropped
-        
+    
     def detect_faces(self, frame):
         g_img = self.get_grayscale(frame)
         storage = cv.CreateMemStorage(0)
@@ -100,11 +103,14 @@ class DrawManager(object):
         self.drawfuncs = [self.draw_circle,
                           self.draw_line,
                           self.draw_arc,
-                          self.draw_lines]
+                          self.draw_lines,
+                          self.draw_curves,]
+        #self.drawfuncs = [self.draw_curves]
         self.pen_width = 1
-        self.pen_color = pygame.Color(random.choice((0, 255)),
-                                      random.choice((0, 255)),
-                                      random.choice((0, 255)))
+        self.pen_color = pygame.Color(random.choice(['cyan',
+                                                     'yellow',
+                                                     'magenta',
+                                                     'green']))
     
     def draw(self, image, data):
         for face in data:
@@ -116,56 +122,39 @@ class DrawManager(object):
                 self.pen_width = random.randrange(1, 11, 3)
                 random.choice(self.drawfuncs)(image, scaled, i)
 
+    def draw_curves(self, image, data, i):
+        seg_start = data[i]
+        nearest = data[self.nearest_index(data[i], data)]
+        for j in range(len(data) * 4):
+            dist = get_distance(data[i], nearest) / random.choice((1, 1, 2, 4))
+            seg_end = (abs(random.choice((-dist, dist)) + seg_start[0]),
+                       abs(random.choice((-dist, dist)) + seg_start[1]))
+            print seg_start, seg_end
+            pygame.draw.arc(image,
+                            self.pen_color,
+                            (seg_start, seg_end), # rect
+                            random.choice([math.pi * 0.5, 0]),
+                            random.choice([math.pi * 0.5 + math.pi, math.pi]),
+                            self.pen_width # width
+                            )
+            seg_start = seg_end
+            
+
     def draw_lines(self, image, data, i):
         seg_start = data[i]
-        
-        #for i in range(len(data) * 2):
-        for i in range(25):
-            # use a better randomization algorithm, to specify a direction, end
-            # point, etc.
+
+        nearest = data[self.nearest_index(data[i], data)]
+        for j in range(len(data) * 4):
+            dist = get_distance(data[i], nearest) / random.choice((1, 1, 2, 4))
             direction = self.get_direction(data, seg_start)
-            seg_end = (direction[0] * random.choice((0, 50, 50)) + seg_start[0],
-                       direction[1] * random.choice((0, 50, 50)) + seg_start[1])
-            print seg_start, seg_end, direction
-                       
-            pygame.draw.line(image, 
-                             self.pen_color, 
+            seg_end = (direction[0] * random.choice((0, dist)) + seg_start[0],
+                       direction[1] * random.choice((0, dist)) + seg_start[1])
+            pygame.draw.line(image,
+                             self.pen_color,
                              seg_start,
                              seg_end, 
                              self.pen_width)
-            seg_end = seg_start
-
-    def get_direction(self, data, loc):
-        """Specify a direction that points to the area with the greatest number
-        of points."""
-        x_move = 0
-        y_move = 0
-        for pt in data:
-            # the conditionals should exclude the point itself. also add this 
-            # later
-            if pt[0] < loc[0]:
-                x_move -= 1
-            if pt[0] > loc[0]:
-                x_move += 1
-
-            if pt[1] < loc[1]:
-                y_move -= 1
-            if pt[1] > loc[1]:
-                y_move += 1
-        
-        if x_move > 0:
-            x_move = 1
-        elif x_move < 0:
-            x_move = -1 
-        
-        if y_move > 0:
-            y_move = 1
-        elif y_move < 0:
-            y_move = -1
-        
-        return x_move, y_move
-        
-
+            seg_start = seg_end
         
     def draw_line(self, image, data, i):                
         pygame.draw.line(image, 
@@ -201,6 +190,36 @@ class DrawManager(object):
                         random.choice([math.pi * 0.5 + math.pi, math.pi]),
                         self.pen_width # width
                         )
+
+    def get_direction(self, data, loc):
+        """Specify a direction that points to the area with the greatest number
+        of points."""
+        x_move = 0
+        y_move = 0
+        for pt in data:
+            # the conditionals should exclude the point itself. also add this 
+            # later
+            if pt[0] < loc[0]:
+                x_move -= 1
+            if pt[0] > loc[0]:
+                x_move += 1
+
+            if pt[1] < loc[1]:
+                y_move -= 1
+            if pt[1] > loc[1]:
+                y_move += 1
+        
+        if x_move > 0:
+            x_move = 1
+        elif x_move < 0:
+            x_move = -1 
+        
+        if y_move > 0:
+            y_move = 1
+        elif y_move < 0:
+            y_move = -1
+        
+        return x_move, y_move
     
     def nearest_index(self, loc, pts):
         min = get_distance((0, 0), (2**16, 2**16))
