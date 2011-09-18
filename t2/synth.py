@@ -95,7 +95,43 @@ synthdefs = ["ts_sin_touch",
              "ts_cubxzx",
              "ts_cubyyy",
              ]
-#defs = ["ts_fammy", "ts_fawwy"]
+
+def make_scale(ratio, min=0.1, oct=2.0):
+    """procedurally generate a just scale by stacking a single interval until
+    it is no longer possible to add an interval larger than the specified 
+    minimum."""
+    # convert minimum ratio to minimum difference. this makes semantic sense, 
+    # but looks kinda stupid anyway
+    note = 1.0
+    scale = []
+
+    # with pythagorean tuning: building upward only will effectively create a
+    # scale with a root on the 4th note of the list. presumably, building upward
+    # with other stacked ratios will exhibit the same behavior. So, this 
+    # complicates writing melodies by indexing directly in to the scale list, 
+    # which does not relate to my purpose.
+    while True:
+        scale.append(note)
+        note *= ratio
+        if note > oct:
+            note /= oct
+        if get_smallest_interval(scale) < min:
+            break
+    scale.append(oct)
+    scale.sort()
+    return scale
+
+def get_smallest_interval(list):
+    "return the smallest nonzero interval between reference val and list"
+    min = max(list)
+    # calling sort here and in make_scale() is inefficient, but shouldn't be too
+    # much of a performance hit
+    slist = sorted(list)
+    for i in range(len(list)):
+        diff = slist[i] - slist[i-1]
+        if min > diff > 0.0:
+            min = diff
+    return min
 
 def make_rscale(notes):
     "Make a scale by applying 50% probability to each note in a scale."
@@ -265,7 +301,6 @@ def test(numvoices=1, quant=4):
 
 if __name__ == "__main__":
     #start_listener()
-    # example output
-    # 
-    test()
+    #test()
+    make_scale(3.0/2.0)
 
