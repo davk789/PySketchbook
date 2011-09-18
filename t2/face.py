@@ -104,8 +104,9 @@ class DrawManager(object):
                           self.draw_line,
                           self.draw_arc,
                           self.draw_lines,
-                          self.draw_curves,]
-        #self.drawfuncs = [self.draw_curves]
+                          #self.draw_curves,
+                          self.draw_rect,
+                          ]
         self.pen_width = 1
         self.pen_color = pygame.Color(random.choice(['cyan',
                                                      'yellow',
@@ -114,6 +115,10 @@ class DrawManager(object):
     
     def draw(self, image, data):
         for face in data:
+            self.pen_color = pygame.Color(random.choice(['cyan',
+                                                         'yellow',
+                                                         'magenta',
+                                                         'green']))
             scaled = [(x*image.get_width(), y*image.get_height()) 
                       for x, y 
                       in face]
@@ -123,21 +128,37 @@ class DrawManager(object):
                 random.choice(self.drawfuncs)(image, scaled, i)
 
     def draw_curves(self, image, data, i):
+        "this does not work."
         seg_start = data[i]
         nearest = data[self.nearest_index(data[i], data)]
-        for j in range(len(data) * 4):
-            dist = get_distance(data[i], nearest) / random.choice((1, 1, 2, 4))
+        #for j in range(len(data) * 4):
+        for j in range(random.randrange(2, 4)):
+            dist = get_distance(data[i], nearest) / random.choice((1, 2, 4, 8, 16))
             seg_end = (abs(random.choice((-dist, dist)) + seg_start[0]),
                        abs(random.choice((-dist, dist)) + seg_start[1]))
             print seg_start, seg_end
-            pygame.draw.arc(image,
+            #pygame.draw.arc(image,
+            pygame.draw.rect(image,
                             self.pen_color,
                             (seg_start, seg_end), # rect
-                            random.choice([math.pi * 0.5, 0]),
-                            random.choice([math.pi * 0.5 + math.pi, math.pi]),
+                            #random.choice([math.pi * 0.5, 0]),
+                            #random.choice([math.pi * 0.5 + math.pi, math.pi]),
                             self.pen_width # width
                             )
-            seg_start = seg_end
+            seg_start = seg_end    
+    
+    def draw_rect(self, image, data, i):
+        seg_start = data[i]
+        nearest = data[self.nearest_index(data[i], data)]
+        #for j in range(len(data) * 4):
+        dist = get_distance(data[i], nearest) / random.choice((1, 2, 4, 8, 16))
+        seg_end = (abs(random.choice((-dist, dist)) + seg_start[0]),
+                   abs(random.choice((-dist, dist)) + seg_start[1]))
+        pygame.draw.rect(image,
+                        self.pen_color,
+                        (seg_start, seg_end),
+                        self.pen_width
+                        )
             
 
     def draw_lines(self, image, data, i):
@@ -167,6 +188,9 @@ class DrawManager(object):
         nearest = self.nearest_index(data[i], data)
         rdenom = random.choice([1, 2, 4, 8, 8, 8, 16, 16])
         radius = get_distance(data[i], data[nearest]) / rdenom
+        if radius < self.pen_width:
+            # forcibly avoid an error here
+            self.pen_width = int(radius)
         pygame.draw.circle(image,
                            self.pen_color,
                            [int(n) for n in data[i]],

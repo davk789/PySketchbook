@@ -67,11 +67,12 @@ def update(screen, capture, faces):
     if not allow_update(has_data):
         return
     
-    synth.run(data)
+    
+    synth.run(data + data) # double the number of voices
 
     update_display(screen, data, faces)
 
-def fake_update(screen, faces):
+def test_update(screen, faces):
     """prepare images, faking the facial data with random data"""
     numfaces = random.randrange(1, 5)
     quant = 4.0
@@ -91,7 +92,8 @@ def update_display(screen, data, faces):
 
     faces.draw(pg_frame, data)
 
-    # add a blur - very glitchy but kind of interesting
+    # add a blur - very glitchy but kind of interesting - works on my win
+    # machine only, for some reason.
     #arr_frame = surfarray.array2d(pg_frame)
     #arr_frame = ndimage.filters.gaussian_filter(arr_frame, 3.0)
     #pg_frame = surfarray.make_surface(arr_frame)
@@ -152,7 +154,7 @@ def test():
 
     faces = Faces()
 
-    fake_update(screen, faces)
+    test_update(screen, faces)
     while True:
         for ev in pygame.event.get():
             if ev.type == QUIT:
@@ -166,8 +168,8 @@ def test():
         pygame.time.wait(REFRESH_TIME)
 
 if __name__ == "__main__":
-    test()
-    #main()
+    #test()
+    main()
 
 
 
