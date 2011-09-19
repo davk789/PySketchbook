@@ -4,10 +4,11 @@ synth.py
 Run the sequencer from python here.
 
 TODO:
-1 - generate scales algorithmically -- build ~7 note scales based on simple 
-    stacked interval
+1 - base the parameters of the scale generator on the facial data
 2 - the rhythmic quantization should be based on the facial data, rather than
     a random generator
+3 - wrap the granular synth code in to a class, and add a separate delay or
+    sampler class of some sort to artifically increast the density of the sound
 
 """
 import socket
@@ -22,38 +23,6 @@ s = [controller.Controller(("192.168.2.5", 57110)),
 run_flag = Value('I', 1)
 # all scales will be expressed as intervals
 root = 55.0
-# 7 note scales sound better, less dissonance, sounds more like a chord
-#scales = {'bohlen-pierce': (1.0/1.0,25.0/21.0,9.0/7.0,7.0/5.0,5.0/3.0,9.0/5.0,
-#                            15.0/7.0,7.0/3.0,25.0/9.0,3.0/1.0),
-#          'centaur':       (1.0/1.0,21.0/20.0,9.0/8.0,7.0/6.0,5.0/4.0,4.0/3.0,
-#                            7.0/5.0,3.0/2.0,14.0/9.0,5.0/3.0,7.0/4.0,15.0/8.0,
-#                            2.0/1.0),
-#          'centaur7':      (1.0/1.0,9.0/8.0,5.0/4.0,4.0/3.0,
-#                            3.0/2.0,5.0/3.0,7.0/4.0, # use the minor 7
-#                            2.0/1.0),
-#          'pythagorean':   (1.0/1.0, 9.0/8.0, 81.0/64.0,4.0/3.0,3.0/2.0,
-#                            27.0/16.0,243.0/128.0, 2.0/1.0),
-#          'pythagorean12': (1.0/1.0, 256.0/243.0, 9.0/8.0, 32.0/17.0, 81.0/64.0,
-#                            4.0/3.0,1024.0/729.0,3.0/2.0,128.0/81.0,27.0/16.0,
-#                            16.0/9.0,243.0/128.0,2.0/1.0),
-#          'partch':        (1.0/1.0,12.0/11.0,11.0/10.0,10.0/9.0,9.0/8.0,
-#                            8.0/7.0,7.0/6.0,6.0/5.0,11.0/9.0,5.0/4.0,
-#                            14.0/11.0,9.0/7.0,4.0/3.0,11.0/8.0,7.0/5.0,
-#                            10.0/7.0,16.0/11.0,3.0/2.0,14.0/9.0,11.0/7.0,
-#                            8.0/5.0,18.0/11.0,5.0/3.0,12.0/7.0,7.0/4.0,
-#                            16.0/9.0,9.0/5.0,20.0/11.0,11.0/6.0,2.0/1.0),
-#          '5:4':           (1.0/1.0, 625.0/512.0, 5.0/4.0, 3125.0/2048.0, 25.0/16.0, 
-#                            15625.0/8192.0, 125.0/64.0),
-#          }
-scales = {'centaur':     (1.0/1.0,9.0/8.0,5.0/4.0,4.0/3.0,
-                          3.0/2.0,5.0/3.0,7.0/4.0, # use the minor 7
-                          2.0/1.0),
-          'pythagorean': (1.0/1.0, 9.0/8.0, 81.0/64.0,4.0/3.0,3.0/2.0,
-                          27.0/16.0,243.0/128.0, 2.0/1.0),
-          '5:4':         (1.0/1.0,625.0/512.0, 5.0/4.0,3125.0/2048.0,25.0/16.0,
-                          15625.0/8192.0, 125.0/64.0),
-          #'7:8':         (1.0/1.0, 2.0/1.0),
-          }
 
 synthdefs = ["ts_sin_touch",
              "ts_swoop",
@@ -167,12 +136,6 @@ def get_unit(data, max=1.0):
             get_unit.value = item
     return get_unit.value
 
-def random_freq(scale, osize=2.0):
-    note = random.choice(scale)
-    octave = random.randrange(3)
-    omul = osize ** octave
-    return note * root * omul
-
 def ratio_to_freq(note, osize=2.0):
     "get frequency in a random octave for a specified ratio"
     #octave = random.randrange(3) # 3 for tritave, 4 for octave scales
@@ -183,6 +146,7 @@ def ratio_to_freq(note, osize=2.0):
 def graingen(notes, face, defs, can_run):
     delay = 1.0# compensate for network latency
     scale = make_fscale(notes, face)
+    print scale
     fseq = patterns.Pseq(scale)
     while can_run.value:
         server = get_server() # cyclt through available servers
@@ -198,8 +162,6 @@ def graingen(notes, face, defs, can_run):
             rbeat = random.randrange(quant) * (1.0/float(quant))# 0-1 value, quantized
             server.sendBundleAbs(rbeat * beat + basetime + delay,
                          [['s_new', random.choice(defs), -1, 0, 1,
-#                           'freq',  random_freq(scale, notes[-1]),
-#                           'freq2', random_freq(scale, notes[-1]),
                            'freq',  ratio_to_freq(fseq.next(), notes[-1]),
                            'freq2', ratio_to_freq(fseq.next(), notes[-1]),
                            'pan',   next_value(face, -1.0, 1.0),
@@ -278,14 +240,15 @@ def stop():
 def run(faces):
     "start or stop a synth loop"
     numvoices = len(faces)
-    scale = random.choice(("pythagorean", "5:4", "centaur7"))
+    ratio = float(random.randrange(3, 13))
+    scale = make_scale(ratio / (ratio - 1), 0.1)
     print scale
     if numvoices > 0:
         run_flag.value = 1
         defs = randsplit(synthdefs, numvoices)
         for i in range(min(numvoices, 7)): # limit the number of synth voices to 6
             # MAIN SYNTH LOOP
-            doloop(scales[scale], faces[i], defs[i], run_flag)
+            doloop(scale, faces[i], defs[i], run_flag)
             # **** ***** ****
     else:
         stop()
@@ -301,6 +264,5 @@ def test(numvoices=1, quant=4):
 
 if __name__ == "__main__":
     #start_listener()
-    #test()
-    make_scale(3.0/2.0)
+    test(2)
 
