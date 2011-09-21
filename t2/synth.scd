@@ -10,6 +10,23 @@ t.makeWindow;
 s.boot; t.boot;
 
 // SynthDefs
+
+// delay section
+
+/*  simple persistent stereo delay -- delay the main output signal by a fixed 
+	amount. No modulation necessary
+*/
+
+SynthDef("ts_p_delay",
+	{  |delayTime=1|
+		var aIn = In.ar(0, 2);
+		// watch out for exceeding allowable delay
+		var aSig = DelayC.ar(aIn, 12, delayTime);
+		Out.ar(0, aSig)
+	}
+).load(s); // and "t" too - I guess a reboot is needed
+
+// synth section
 SynthDef("ts_sin_touch",
 	{ |freq=200, att=0.01, rel=0.2, lev=0.2, pan=0.0|
 		var kEnv = EnvGen.kr(Env.perc(att, rel), 1, lev, doneAction:2);
