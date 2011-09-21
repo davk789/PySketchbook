@@ -17,14 +17,15 @@ s.boot; t.boot;
 	amount. No modulation necessary
 */
 
-SynthDef("ts_p_delay",
-	{  |delayTime=1|
+SynthDef("ts_delay",
+	{  |delayTime=1, gate=1, lev=1, bufnum=1|
 		var aIn = In.ar(0, 2);
 		// watch out for exceeding allowable delay
-		var aSig = DelayC.ar(aIn, 12, delayTime);
+		var kEnv = EnvGen.ar(Env.asr(0.1, 1.0, 1.0), gate, lev, doneAction:2);
+		var aSig = BufDelayC.ar(bufnum, aIn, delayTime, kEnv);
 		Out.ar(0, aSig)
 	}
-).load(s); // and "t" too - I guess a reboot is needed
+).load(s); // and "t" too
 
 // synth section
 SynthDef("ts_sin_touch",
