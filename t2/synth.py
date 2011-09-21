@@ -22,7 +22,6 @@ s = [controller.Controller(("192.168.2.5", 57110)),
      controller.Controller(("192.168.2.5", 57210))]
 # all scales will be expressed as intervals
 root = 55.0
-
 synthdefs = ["ts_sin_touch",
              "ts_swoop",
              "ts_sin_touch", # double the chances of the 2 straight sin oscs
@@ -63,6 +62,7 @@ synthdefs = ["ts_sin_touch",
              "ts_cubxzx",
              "ts_cubyyy",
              ]
+
 
 class GranuSynth(Process):
     """GranuSynth is a Process instance -- a granular synth loop with all 
@@ -157,31 +157,57 @@ class GranuSynth(Process):
                 self.unitval = item
         return self.unitval
 
+# *** delay functions ***
 
-class Sampler(object):
-    """
-    Manage buffers and synth for a sampler voice to artificially thicken the sound.
-    """
+class Delayer(object):
+    """Maintain a delay synth. Just basically hold a small amount of data and
+    provide two functions to start and stop synths on the server."""
     def __init__(self):
-        pass
+        self.running = False
+        self.group_id = 999
+        self.bufnums = []
     
+    def start(self, delayTime=2.0, numdelays=1):
+        if self.running:
+            return
+        else:
+            self.running = True
+            for server in s:
+                server.sendMsg('g_new', self.group_id, 1, 0)
+                # wait for the group to be created before creating the synth
+                # lazy edition
+                time.sleep(0.5)
+                for i in range(numdelays):
+                    
+                    delay_offset = delayTime * i
+                    if i >= len(self.bufnums):
+                        self.bufnums.append(tools.nextNodeID())
+                    # let the server reject this call if the buffer exists
+                    server.sendMsg('b_alloc', self.bufnums[i], 44100 * 16, 2)
+                    server.sendMsg('s_new', 'ts_delay', -1, 1, self.group_id,
+                                   'delayTime', delayTime + delay_offset,
+                                   'lev', 1.0,
+                                   'bufnum', self.bufnums[i])
+    
+    def stop(self):
+        self.running = False
+        for server in s:
+            server.sendMsg('n_set', self.group_id, 'gate', 0)
 
+# this is ugly. fuckit
+delay = Delayer()
 # *** GLOBAL UTILITY FUNCTIONS ***
 
 def make_scale(ratio, size=7, oct=2.0):
     """procedurally generate a just scale by stacking a single interval until
     it is no longer possible to add an interval larger than the specified 
     minimum."""
-    # convert minimum ratio to minimum difference. this makes semantic sense, 
-    # but looks kinda stupid anyway
     note = 1.0
     scale = []
 
     # with pythagorean tuning: building upward only will effectively create a
     # scale with a root on the 4th note of the list. presumably, building upward
-    # with other stacked ratios will exhibit the same behavior. So, this 
-    # complicates writing melodies by indexing directly in to the scale list, 
-    # which does not relate to my purpose.
+    # with other stacked ratios will exhibit the same behavior. 
     for i in range(size):
         scale.append(note)
         note *= ratio
@@ -244,6 +270,7 @@ def stop():
     global threads # check if I can get rid of this now
     for thread in threads:
         thread.stop()
+    delay.stop()
     
 def run(faces):
     "start or stop a synth loop"
@@ -259,6 +286,8 @@ def run(faces):
             # MAIN SYNTH LOOP
             doloop(scale, faces[i], defs[i])
             # **** ***** ****
+        delay.start(2.0, 2)
+            
     else:
         stop()
 
@@ -286,6 +315,7 @@ def random_face(quant=4):
 
 if __name__ == "__main__":
     #start_listener()
-    test(2)
+    #test(2)
+    print "wazz"
     #test_scale(2)
 
