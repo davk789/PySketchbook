@@ -15,6 +15,7 @@ import socket
 import time
 import random
 from multiprocessing import Process, Value
+from threading import Thread # is it okay to use two threading libs here?
 from scosc import controller, tools, patterns
 
 threads = []
@@ -156,6 +157,53 @@ class GranuSynth(Process):
             elif item < max and item > 0.0:
                 self.unitval = item
         return self.unitval
+
+# *** sampler section -- replace the delay with a sampled section
+
+class Sampler(Thread):
+    """Instead of a delay, write to and then read the signal from the disc. Kind
+    of like an arbitrarily long delay. The sampler class contains:
+    1 player
+    1 recorder
+    1 buffer
+    ...multiple sessions should create entirely new objects.
+
+    """
+    def __init__(self, dur=5.0):
+        Process.__init__(self)
+        self.duration = dur # duration in seconds
+        self.group_id = tools.nextNodeID()
+        self.bufnum = tools.nextNodeID()
+        self.s = get_server()
+        self.s.sendMsg("g_new", self.group_id, 0, 0)
+        # need to check loading files over the network        
+
+    def run(self):
+        """start the recording, and when the time is up, start the playback"""
+        self.start_recording();
+        time.sleep(self.duration)
+        self.stop_recording()
+        self.start_playback
+        time.sleep(self.duration)
+        self.stop_playback()
+
+    def start_recording(self):
+        path = "/Users/davk/Music/" + str(time.time()) + ".aif"
+        self.s.sendMsg("b_alloc", self.bufnum, 44100 * 2, 2)
+        self.s.sendMsg("b_write", self.bufnum, path, "aiff", "int16", 0, 0, 1)
+        self.s.sendMsg("s_new", "ts_rdx_rec", -1, 0, self.group_id)
+    
+    def stop_recording(self):
+        self.s.sendMsg("n_set", self.group_id, "gate", 0)
+        self.s.sendMsg("b_close", self.bufnum)
+        self.s.sendMsg("b_free", self.bufnum)
+    
+    def start_playback(self):
+        pass
+    
+    def stop_playback(self):
+        pass
+    
 
 # *** delay functions ***
 

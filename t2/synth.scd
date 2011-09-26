@@ -11,7 +11,26 @@ s.boot; t.boot;
 
 // SynthDefs
 
-// delay section
+// accompaniment setion
+
+/*
+	Playback and record.
+*/
+
+SynthDef("ts_rdx_rec",
+	{ |bufnum=1|
+		var aIn = In.ar(0, 2);
+		DiskOut.ar(bufnum, aIn);
+	}
+).load(s);
+
+SynthDef("ts_rdx_play", 
+	{ |bufnum=1,lev=1.0,gate=1|
+		var kEnv = EnvGen.ar(Env.asr(0.1, 1.0, 0.5), gate, lev);
+		var aSig = DiskIn.ar(2, bufnum, 1);
+		Out.ar(0, aSig * kEnv);
+	}
+).load(s);
 
 /*  simple persistent stereo delay -- delay the main output signal by a fixed 
 	amount. No modulation necessary
@@ -54,7 +73,6 @@ SynthDef("ts_hash",
 		Out.ar(0, Pan2.ar(aSig, pan));
 	}
 ).load(s);
-
 
 SynthDef("ts_hash_blub",
 	{ arg freq=200, freq2=1000, att=0.01, rel=0.2, lev=0.2, pan=0.0,
