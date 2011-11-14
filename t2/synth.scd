@@ -1,13 +1,15 @@
 /**
  * 
- * SynthDefs to be used in synth.py. Also try maintaining a second server for
- * multiprocessing optimization.
+ * SynthDefs to be used in synth.py. 
  * 
  */
 // Server 2
 t = Server('auxiliary', NetAddr("127.0.0.1", 57111));
 t.makeWindow;
 s.boot; t.boot;
+
+s.sendMsg('n_set', 1000, 'gate', 0)
+s.queryAllNodes
 
 // SynthDefs
 
@@ -18,19 +20,20 @@ s.boot; t.boot;
 */
 
 SynthDef("ts_rdx_rec",
-	{ |bufnum=1|
+	{ |bufnum=1, gate=1, lev=1|
+		var kEnv = EnvGen.ar(Env.asr(0.1, 1.0, 0.1), gate, lev, doneAction:2);
 		var aIn = In.ar(0, 2);
-		DiskOut.ar(bufnum, aIn);
+		DiskOut.ar(bufnum, aIn * kEnv);
 	}
 ).load(s);
 
 SynthDef("ts_rdx_play", 
 	{ |bufnum=1,lev=1.0,gate=1|
-		var kEnv = EnvGen.ar(Env.asr(0.1, 1.0, 0.5), gate, lev);
+		var kEnv = EnvGen.ar(Env.asr(0.1, 1.0, 0.1), gate, lev, doneAction:2);
 		var aSig = DiskIn.ar(2, bufnum, 1);
 		Out.ar(0, aSig * kEnv);
 	}
-).load(s);
+).load(t);
 
 /*  simple persistent stereo delay -- delay the main output signal by a fixed 
 	amount. No modulation necessary
