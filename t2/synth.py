@@ -15,12 +15,14 @@ import socket
 import time
 import random
 from multiprocessing import Process, Value
-from threading import Thread # is it okay to use two threading libs here?
+from threading import Thread, Event
 from scosc import controller, tools, patterns
 
-threads = []
-s = [controller.Controller(("192.168.2.5", 57110)),
-     controller.Controller(("192.168.2.5", 57210))]
+gs_threads = []
+s = [controller.Controller(("192.168.10.101", 57110)),
+     controller.Controller(("192.168.10.101", 57210))]
+#s = [controller.Controller(("192.168.2.5", 57110)),
+#     controller.Controller(("192.168.2.5", 57210))]
 # all scales will be expressed as intervals
 root = 55.0
 synthdefs = ["ts_sin_touch",
@@ -169,40 +171,76 @@ class Sampler(Thread):
     ...multiple sessions should create entirely new objects.
 
     """
-    def __init__(self, dur=5.0):
-        Process.__init__(self)
+    def __init__(self, dur=5.0, name="ts"):
+        Thread.__init__(self)
         self.duration = dur # duration in seconds
         self.group_id = tools.nextNodeID()
-        self.bufnum = tools.nextNodeID()
-        self.s = get_server()
-        self.s.sendMsg("g_new", self.group_id, 0, 0)
-        # need to check loading files over the network        
+        self.inbuf = tools.nextNodeID()
+        self.outbuf = tools.nextNodeID()
+        self.bufsize = 65536
+        #self.path = "/Users/davk/Music/" + str(time.time()) + ".aif        
+        self.paths = ["/Users/davk/Music/ts_" + name + "_0.aif",
+                     "/Users/davk/Music/ts_" + name + "_1.aif"]
+        self.path = self.paths[0]
+        
+        self.sendMsg("g_new", self.group_id, 1, 0)
+
+    
+    def free(self):
+        self.sendMsg("n_free", self.group_id)
+    
+    def stop(self):
+        self.stop_recording()
+        self.stop_playback()
 
     def run(self):
         """start the recording, and when the time is up, start the playback"""
-        self.start_recording();
+        self.start_recording()
         time.sleep(self.duration)
         self.stop_recording()
-        self.start_playback
+        self.start_playback()
         time.sleep(self.duration)
         self.stop_playback()
+        self.free()
+        
+    def sendMsg(self, *args):
+        for server in s:
+            server.listSendMsg(args)
+
+    def bufferSendMsg(self, *args):
+        i = 0
+        largs = list(args)
+        for server in s:
+            largs[2] = self.paths[i]
+            print largs
+            server.listSendMsg(largs)
+            i += 1
 
     def start_recording(self):
-        path = "/Users/davk/Music/" + str(time.time()) + ".aif"
-        self.s.sendMsg("b_alloc", self.bufnum, 44100 * 2, 2)
-        self.s.sendMsg("b_write", self.bufnum, path, "aiff", "int16", 0, 0, 1)
-        self.s.sendMsg("s_new", "ts_rdx_rec", -1, 0, self.group_id)
+        self.sendMsg("b_alloc", self.inbuf, self.bufsize, 2)
+        self.bufferSendMsg("b_write", self.inbuf, self.path, "aiff", "int16", 0, 
+                       0, 1)
+        self.sendMsg("s_new", "ts_rdx_rec", -1, 0, self.group_id,
+                       "bufnum", self.inbuf,
+                       "gate", 1.0)
     
     def stop_recording(self):
-        self.s.sendMsg("n_set", self.group_id, "gate", 0)
-        self.s.sendMsg("b_close", self.bufnum)
-        self.s.sendMsg("b_free", self.bufnum)
+        self.sendMsg("n_set", self.group_id, "gate", 0)
+        self.sendMsg("b_close", self.inbuf)
+        self.sendMsg("b_free", self.inbuf)
     
     def start_playback(self):
-        pass
+        # re-using the same buffer
+        self.sendMsg("b_alloc", self.outbuf, self.bufsize, 2)
+        self.bufferSendMsg("b_read", self.outbuf, self.path, 0, -1, 0, 1)
+        self.sendMsg("s_new", "ts_rdx_play", -1, 1, self.group_id,
+                       "bufnum", self.outbuf,
+                       "gate", 1.0)
     
     def stop_playback(self):
-        pass
+        self.sendMsg("n_set", self.group_id, "gate", 0)
+        self.sendMsg("b_close", self.outbuf)
+        self.sendMsg("b_free", self.outbuf)
     
 
 # *** delay functions ***
@@ -242,8 +280,6 @@ class Delayer(object):
         for server in s:
             server.sendMsg('n_set', self.group_id, 'gate', 0)
 
-# this is ugly. fuckit
-delay = Delayer()
 # *** GLOBAL UTILITY FUNCTIONS ***
 
 def make_scale(ratio, size=7, oct=2.0):
@@ -272,8 +308,8 @@ def get_server():
 get_server.index = 0
 
 def doloop(scale, face, defs):
-    threads.append(GranuSynth(scale, face, defs))
-    threads[-1].start()
+    gs_threads.append(GranuSynth(scale, face, defs))
+    gs_threads[-1].start()
 
 def randsplit(data, sections=2):
     """randomly split a list in to n number of sublists. does not check for
@@ -290,7 +326,7 @@ def randsplit(data, sections=2):
 def start_listener():
     "This is how to receive data packets from a network."
     print "starting listener"
-    udp_ip = "192.168.2.5" # the ip address of this computer on the network
+    udp_ip = "192.168.1.1" # the ip address of this computer on the network
     udp_port = 57199
     
     sock = socket.socket(socket.AF_INET,    # from internet
@@ -315,14 +351,14 @@ def osc_value(key, data):
 
 def stop():
     "Stops all running synth loops."
-    global threads # check if I can get rid of this now
-    for thread in threads:
+    global gs_threads
+    for thread in gs_threads:
         thread.stop()
-    delay.stop()
     
 def run(faces):
     "start or stop a synth loop"
     numvoices = len(faces)
+    #delay = Delayer()
     # only the first three will ever get selected
     rchoices = [3.0/2.0, 5.0/4.0, 8.0/7.0, 9.0/8.0, 11.0/10.0, 13.0/12.0]
     # doesn't check for bounding errors. watch for a bug here.
@@ -334,10 +370,11 @@ def run(faces):
             # MAIN SYNTH LOOP
             doloop(scale, faces[i], defs[i])
             # **** ***** ****
-        delay.start(2.0, 2)
+        #delay.start(2.0, 2)
             
     else:
         stop()
+        #delay.stop()
 
 # *** TESTING ***
 
@@ -347,6 +384,20 @@ def test(numvoices=1, quant=4):
         face = random_face(quant)
         data.append(face)
     run(data)
+    #####
+
+def test_sampler():
+    test()
+    samp = Sampler(10.0)
+    samp.start()
+    time.sleep(5.0)
+    stop()
+    time.sleep(1.0)
+    test()
+    time.sleep(5.0)
+    stop()
+    samp.join()
+
 
 def test_scale(numvoices):
     for i in range(numvoices):
@@ -364,6 +415,6 @@ def random_face(quant=4):
 if __name__ == "__main__":
     #start_listener()
     #test(2)
-    print "wazz"
+    test_sampler()
     #test_scale(2)
 

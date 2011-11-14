@@ -17,11 +17,11 @@ import sys
 import random
 
 import pygame
-from pygame import surfarray
+#from pygame import surfarray
 from pygame.locals import *
 import cv
 from scosc import controller
-from scipy import ndimage
+#from scipy import ndimage
 
 from face import Faces
 import synth
@@ -66,7 +66,6 @@ def update(screen, capture, faces):
     has_data = len(data) > 0
     if not allow_update(has_data):
         return
-    
     
     synth.run(data + data) # double the number of voices
 
@@ -125,7 +124,7 @@ def main():
         sys.exit(1)
     
     pygame.display.set_caption("Transmutation Study")
-    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    screen = pygame.display.set_mode((WIDTH, HEIGHT), FULLSCREEN)
 
     faces = Faces()
 
@@ -150,11 +149,12 @@ def test():
     "hacked version of run(). the testing should be better integrated."
     pygame.init()
     pygame.display.set_caption("Transmutation Study Test")
-    screen = pygame.display.set_mode((WIDTH, HEIGHT))
-
+    screen = pygame.display.set_mode((WIDTH, HEIGHT), FULLSCREEN)
+    
     faces = Faces()
 
     test_update(screen, faces)
+
     while True:
         for ev in pygame.event.get():
             if ev.type == QUIT:
@@ -164,7 +164,7 @@ def test():
                     screen = toggle_fullscreen(screen)
                 elif ev.key == K_ESCAPE:
                     return
-            
+        test_update(screen, faces)
         pygame.time.wait(REFRESH_TIME)
 
 if __name__ == "__main__":
